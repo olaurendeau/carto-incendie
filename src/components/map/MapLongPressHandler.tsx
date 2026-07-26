@@ -84,8 +84,15 @@ export const MapLongPressHandler = ({
       return map.containerPointToLatLng(point);
     };
 
+    // Sur tactile, l'appui long n'est déclenché qu'au relâcher du doigt :
+    // ouvrir le dialog (mutation du DOM) sous un doigt encore posé peut
+    // coincer le scroll de la page sur iOS Safari — état qui persiste
+    // ensuite à travers les navigations client (même document).
+    let pendingLatLng: L.LatLng | null = null;
+
     const handleTouchStart = (e: TouchEvent) => {
       clearTimer();
+      pendingLatLng = null;
       const touch = e.touches[0];
       if (!touch) return;
       const latlng = getLatLngFromTouch(touch);
@@ -94,24 +101,29 @@ export const MapLongPressHandler = ({
       timerRef.current = setTimeout(() => {
         timerRef.current = null;
         touchIgnoreUntilRef.current = Date.now() + TOUCH_IGNORE_MS;
-        if (startLatLngRef.current != null) {
-          onLongPressRef.current(
-            startLatLngRef.current.lat,
-            startLatLngRef.current.lng
-          );
-        }
-        startPosRef.current = null;
-        startLatLngRef.current = null;
+        pendingLatLng = startLatLngRef.current;
       }, LONG_PRESS_MS);
     };
 
-    const handleTouchEnd = () => clearTimer();
-    const handleTouchCancel = () => clearTimer();
+    const handleTouchEnd = () => {
+      const latlng = pendingLatLng;
+      pendingLatLng = null;
+      clearTimer();
+      if (latlng != null) {
+        onLongPressRef.current(latlng.lat, latlng.lng);
+      }
+    };
+
+    const handleTouchCancel = () => {
+      pendingLatLng = null;
+      clearTimer();
+    };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (startPosRef.current == null) return;
       const touch = e.touches[0];
       if (!touch) {
+        pendingLatLng = null;
         clearTimer();
         return;
       }
@@ -121,6 +133,7 @@ export const MapLongPressHandler = ({
         Math.abs(dx) > MOVE_THRESHOLD_PX ||
         Math.abs(dy) > MOVE_THRESHOLD_PX
       ) {
+        pendingLatLng = null;
         clearTimer();
       }
     };
