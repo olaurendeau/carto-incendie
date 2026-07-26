@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { ZoneMapView } from "@/components/map/ZoneMapView";
-import { getFirePointsForZone, getZonePublic } from "@/lib/queries";
+import {
+  getFeaturesForZone,
+  getFirePointsForZone,
+  getZonePublic,
+} from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +20,10 @@ export default async function ZonePage({ params }: ZonePageProps) {
     notFound();
   }
 
-  const points = await getFirePointsForZone(zone.id);
+  const [points, features] = await Promise.all([
+    getFirePointsForZone(zone.id),
+    getFeaturesForZone(zone.id),
+  ]);
 
-  return <ZoneMapView zone={zone} points={points} />;
+  return <ZoneMapView zone={zone} points={points} features={features} />;
 }

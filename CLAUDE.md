@@ -48,6 +48,7 @@ npx drizzle-kit migrate    # Applique les migrations (lit .env.local)
 | `/zone/new` | Formulaire de création de zone (affiche le lien admin une seule fois) |
 | `/zone/[id]` | Carte de la zone, centrée sur son centre/zoom |
 | `/zone/[id]/edit?token=xxx` | Édition de la zone (token validé côté serveur) |
+| `/zone/[id]/edit/annotations?token=xxx` | Éditeur plein écran des annotations (leaflet-geoman, toolbar custom) |
 | `/zone/[id]/point/new?lat=&lng=` | Signalement d'un point d'incendie |
 | `/zone/[id]/point/[pointId]/edit` | Édition d'un point (ouverte à tous) |
 | `/api/zones/[id]/points` | GET JSON des points (bouton rafraîchir) |
@@ -63,8 +64,25 @@ npx drizzle-kit migrate    # Applique les migrations (lit .env.local)
   photos (jsonb), confirmations (int), creatorName, creatorQualite
   (`pompier | elu | habitant | autre`), createdAt/updatedAt.
 
+- `zone_features` : annotations dessinées par l'admin — id, zoneId (FK
+  cascade), kind (`main_courante | zone_risque_pierres | autre`),
+  geometryType (`ligne | polygone`), coordinates (jsonb `{lat,lng}[]`),
+  label, color (personnalisée pour « autre » uniquement),
+  createdAt/updatedAt.
+
 Les enums sont des colonnes `text` + unions TypeScript dans
 `src/types/fire.ts` (labels et couleurs inclus) — pas de `pgEnum`.
+
+### Annotations (leaflet-geoman)
+
+`@geoman-io/leaflet-geoman-free` n'est chargé que dans l'éditeur admin
+(`AnnotationsMap`, ssr:false) — jamais côté visiteurs. Dans l'éditeur, les
+tracés sont des couches Leaflet brutes reconstruites depuis l'état React
+par `GeomanController` (source de vérité = état ; la reconstruction sert de
+rollback visuel). La sauvegarde des sommets se fait à la sortie du mode
+« Modifier » (geoman n'émet `pm:update` qu'au `pm.disable()`). Le rendu
+public est déclaratif (`ZoneFeaturesLayer` : Polyline/Polygon +
+`getFeatureStyle` de `src/lib/feature-style.ts`).
 
 ## Conventions
 

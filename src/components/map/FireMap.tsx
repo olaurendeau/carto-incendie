@@ -7,9 +7,10 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { MapLongPressHandler } from "@/components/map/MapLongPressHandler";
 import { ConfirmButton } from "@/components/fire/ConfirmButton";
 import { SharePointButton } from "@/components/fire/SharePointButton";
+import { ZoneFeaturesLayer } from "@/components/map/ZoneFeaturesLayer";
 import { getMarkerAppearance } from "@/lib/fire-marker";
 import { MAP_BACKGROUNDS, type MapBackgroundId } from "@/lib/map-layers";
-import type { FirePoint } from "@/lib/db/schema";
+import type { FirePoint, ZoneFeature } from "@/lib/db/schema";
 import {
   CRITICITE_LABELS,
   QUALITE_LABELS,
@@ -61,6 +62,7 @@ const formatCreatedAt = (value: Date | string): string =>
 type FireMapProps = {
   zoneId: string;
   points: FirePoint[];
+  features?: ZoneFeature[];
   center: [number, number];
   zoom: number;
   tileLayer?: MapBackgroundId;
@@ -70,6 +72,7 @@ type FireMapProps = {
 export const FireMap = ({
   zoneId,
   points,
+  features = [],
   center,
   zoom,
   tileLayer = "topo",
@@ -84,6 +87,7 @@ export const FireMap = ({
       attributionControl={false}
     >
       <TileLayer url={MAP_BACKGROUNDS[tileLayer].url} />
+      <ZoneFeaturesLayer features={features} />
       {onLongPress != null ? (
         <MapLongPressHandler onLongPress={onLongPress} />
       ) : null}

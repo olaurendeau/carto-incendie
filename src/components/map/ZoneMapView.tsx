@@ -12,7 +12,7 @@ import {
   saveTileLayer,
   type MapBackgroundId,
 } from "@/lib/map-layers";
-import type { FirePoint, PublicZone } from "@/lib/db/schema";
+import type { FirePoint, PublicZone, ZoneFeature } from "@/lib/db/schema";
 import { STATUT_KEYS, STATUT_LABELS, type Statut } from "@/types/fire";
 
 /** Par défaut, seuls les points en cours sont visibles sur la carte. */
@@ -54,9 +54,14 @@ const RefreshIcon = ({ spinning = false }: { spinning?: boolean }) => (
 type ZoneMapViewProps = {
   zone: PublicZone;
   points: FirePoint[];
+  features?: ZoneFeature[];
 };
 
-export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) => {
+export const ZoneMapView = ({
+  zone,
+  points: initialPoints,
+  features = [],
+}: ZoneMapViewProps) => {
   const router = useRouter();
   const [points, setPoints] = useState<FirePoint[]>(initialPoints);
   // Le fond choisi n'affecte pas le HTML initial (carte en ssr:false, menu fermé) :
@@ -166,6 +171,7 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
         <DynamicFireMap
           zoneId={zone.id}
           points={filteredPoints}
+          features={features}
           center={[zone.centerLat, zone.centerLng]}
           zoom={zone.zoom}
           tileLayer={tileLayer}
