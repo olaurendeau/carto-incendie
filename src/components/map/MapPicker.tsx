@@ -90,6 +90,8 @@ type MapPickerProps = {
   onSelect: (latitude: number, longitude: number) => void;
   /** Si fourni, le zoom de la mini-carte est remonté (utilisé pour le zoom de la zone). */
   onZoomChange?: (zoom: number) => void;
+  /** Vue initiale quand aucune position n'est encore placée (ex. centre/zoom de la zone). */
+  initialView?: { latitude: number; longitude: number; zoom: number };
   height?: number;
 };
 
@@ -98,6 +100,7 @@ export const MapPicker = ({
   initialZoom,
   onSelect,
   onZoomChange,
+  initialView,
   height = 300,
 }: MapPickerProps) => {
   // Composant chargé en ssr:false uniquement : lecture localStorage sûre à l'init.
@@ -106,7 +109,9 @@ export const MapPicker = ({
 
   const center: [number, number] = position
     ? [position.latitude, position.longitude]
-    : DEFAULT_CENTER;
+    : initialView
+      ? [initialView.latitude, initialView.longitude]
+      : DEFAULT_CENTER;
 
   const handleDragEnd = useCallback(
     (e: L.LeafletEvent) => {
@@ -124,7 +129,11 @@ export const MapPicker = ({
     >
       <MapContainer
         center={center}
-        zoom={position ? initialZoom ?? 13 : DEFAULT_ZOOM}
+        zoom={
+          position
+            ? initialZoom ?? 13
+            : initialView?.zoom ?? DEFAULT_ZOOM
+        }
         className="h-full w-full"
         scrollWheelZoom
         attributionControl={false}

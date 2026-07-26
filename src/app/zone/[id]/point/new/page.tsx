@@ -45,7 +45,15 @@ export default async function NewFirePointPage({
         </h1>
         <p className="text-sm text-zinc-500">Zone : {zone.name}</p>
       </header>
-      <FirePointForm zoneId={zone.id} initialLocation={initialLocation} />
+      <FirePointForm
+        zoneId={zone.id}
+        initialLocation={initialLocation}
+        defaultView={{
+          latitude: zone.centerLat,
+          longitude: zone.centerLng,
+          zoom: zone.zoom,
+        }}
+      />
     </div>
   );
 }

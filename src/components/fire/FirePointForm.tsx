@@ -8,7 +8,6 @@ import {
   createFirePointAction,
   updateFirePointAction,
 } from "@/lib/db/actions";
-import { getCurrentPosition } from "@/lib/geo";
 import { getStoredIdentity, saveIdentity } from "@/lib/storage";
 import {
   CRITICITE_COLORS,
@@ -50,6 +49,8 @@ type FirePointFormProps = {
   /** Défini en mode édition. */
   pointId?: string;
   initialLocation?: { latitude: number; longitude: number } | null;
+  /** Vue par défaut de la mini-carte sans position (centre/zoom de la zone). */
+  defaultView?: { latitude: number; longitude: number; zoom: number };
   initialData?: FirePointFormData;
 };
 
@@ -57,6 +58,7 @@ export const FirePointForm = ({
   zoneId,
   pointId,
   initialLocation,
+  defaultView,
   initialData,
 }: FirePointFormProps) => {
   const router = useRouter();
@@ -103,19 +105,6 @@ export const FirePointForm = ({
     setCreatorName((prev) => prev || identity.name);
     setCreatorQualite((prev) => prev ?? identity.qualite);
   }, [isEdit]);
-
-  // Sans position initiale (bouton « + »), on tente la géolocalisation.
-  useEffect(() => {
-    if (isEdit || initialLocation != null) return;
-    getCurrentPosition()
-      .then((pos) => {
-        setLatitude((prev) => prev ?? pos.latitude);
-        setLongitude((prev) => prev ?? pos.longitude);
-      })
-      .catch(() => {
-        // L'utilisateur placera le point sur la mini-carte.
-      });
-  }, [isEdit, initialLocation]);
 
   const handleSelectPosition = useCallback((lat: number, lng: number) => {
     setLatitude(lat);
@@ -194,6 +183,7 @@ export const FirePointForm = ({
           position={position}
           initialZoom={15}
           onSelect={handleSelectPosition}
+          initialView={defaultView}
           height={220}
         />
         <p className="mt-2 text-sm text-zinc-500">
