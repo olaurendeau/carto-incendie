@@ -1,0 +1,48 @@
+# Bloc commun : conteneur node jetable, code monté depuis l'hôte,
+# fichiers créés avec l'UID/GID de l'hôte (passés par le Makefile).
+x-node: &node
+  image: ${NODE_IMAGE:-node:22-bookworm-slim}
+  working_dir: /app
+  user: "${UID:-1000}:${GID:-1000}"
+  environment:
+    HOME: /tmp
+  env_file: .env.local
+  volumes:
+    - .:/app
+
+services:
+  # Serveur de dev Next.js — `make dev` ou `docker compose up`
+  app:
+    <<: *node
+    ports:
+      - "3000:3000"
+    # Le rm purge un éventuel verrou orphelin (conteneur tué sans arrêt propre).
+    command: sh -c "rm -rf .next/dev/lock && npm run dev -- -H 0.0.0.0"
+
+  # Drizzle Studio — `make db-studio`, puis ouvrir https://local.drizzle.studio
+  studio:
+    <<: *node
+    profiles: [tools]
+    ports:
+      - "4983:4983"
+    command: npx drizzle-kit studio --host 0.0.0.0
+
+  # Tests e2e Playwright (lance son propre serveur Next sur :3030).
+  # Le navigateur est téléchargé à la version exacte de @playwright/test,
+  # puis mis en cache dans le volume pw-cache.
+  e2e:
+    image: ${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.49.1-noble}
+    profiles: [test]
+    working_dir: /app
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      HOME: /tmp
+    env_file: .env.local
+    volumes:
+      - .:/app
+      - pw-cache:/tmp/.cache
+    ipc: host
+    command: sh -c "npx playwright install chromium && npx playwright test"
+
+volumes:
+  pw-cache:
