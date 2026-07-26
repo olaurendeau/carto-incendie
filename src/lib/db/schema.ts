@@ -7,7 +7,15 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { Criticite, FirePhotoJson, Qualite, Statut } from "@/types/fire";
+import type {
+  Criticite,
+  FeatureGeometry,
+  FeatureKind,
+  FirePhotoJson,
+  LatLngPoint,
+  Qualite,
+  Statut,
+} from "@/types/fire";
 
 export const zonesTable = pgTable("zones", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -50,8 +58,30 @@ export const firePointsTable = pgTable("fire_points", {
     .defaultNow(),
 });
 
+/** Annotations dessinées par l'admin (mains courantes, zones à risque…). */
+export const zoneFeaturesTable = pgTable("zone_features", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  zoneId: uuid("zone_id")
+    .notNull()
+    .references(() => zonesTable.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<FeatureKind>().notNull(),
+  geometryType: text("geometry_type").$type<FeatureGeometry>().notNull(),
+  coordinates: jsonb("coordinates").$type<LatLngPoint[]>().notNull(),
+  label: text("label"),
+  // Couleur personnalisée (type « autre ») ; les types prédéfinis ont une
+  // couleur fixe dans FEATURE_KIND_COLORS.
+  color: text("color"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Zone = typeof zonesTable.$inferSelect;
 export type FirePoint = typeof firePointsTable.$inferSelect;
+export type ZoneFeature = typeof zoneFeaturesTable.$inferSelect;
 
 /** Zone sans le token admin — seule forme autorisée sur les chemins publics. */
 export type PublicZone = Omit<Zone, "adminToken">;

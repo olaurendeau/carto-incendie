@@ -83,3 +83,61 @@ export type ZoneFormData = {
   centerLng: number | null;
   zoom: number;
 };
+
+/** Géométries possibles d'une annotation de zone. */
+export const FEATURE_GEOMETRY_KEYS = ["ligne", "polygone"] as const;
+export type FeatureGeometry = (typeof FEATURE_GEOMETRY_KEYS)[number];
+
+export const FEATURE_GEOMETRY_LABELS: Record<FeatureGeometry, string> = {
+  ligne: "Ligne",
+  polygone: "Polygone",
+};
+
+/** Types d'annotations dessinées par l'admin sur la carte de la zone. */
+export const FEATURE_KIND_KEYS = [
+  "main_courante",
+  "zone_risque_pierres",
+  "autre",
+] as const;
+export type FeatureKind = (typeof FEATURE_KIND_KEYS)[number];
+
+export const FEATURE_KIND_LABELS: Record<FeatureKind, string> = {
+  main_courante: "Main courante",
+  zone_risque_pierres: "Zone à risque de chute de pierres",
+  autre: "Autre",
+};
+
+export const FEATURE_KIND_DESCRIPTIONS: Record<FeatureKind, string> = {
+  main_courante:
+    "Ligne de progression ou d'accès sécurisée (corde, sentier balisé).",
+  zone_risque_pierres:
+    "Périmètre exposé aux chutes de pierres : à éviter ou traverser avec prudence.",
+  autre:
+    "Annotation libre : choisissez la géométrie, le libellé et la couleur.",
+};
+
+/** Géométrie imposée par le type ; null = au choix de l'admin (« autre »). */
+export const FEATURE_KIND_GEOMETRY: Record<FeatureKind, FeatureGeometry | null> =
+  {
+    main_courante: "ligne",
+    zone_risque_pierres: "polygone",
+    autre: null,
+  };
+
+export const FEATURE_KIND_COLORS: Record<FeatureKind, string> = {
+  main_courante: "#2563eb",
+  zone_risque_pierres: "#dc2626",
+  autre: "#7c3aed",
+};
+
+export type LatLngPoint = { lat: number; lng: number };
+
+/** Données du formulaire de création/édition d'une annotation. */
+export type ZoneFeatureFormData = {
+  kind: FeatureKind;
+  geometryType: FeatureGeometry;
+  coordinates: LatLngPoint[];
+  label: string;
+  /** Couleur personnalisée, utilisée uniquement pour le type « autre ». */
+  color: string | null;
+};
