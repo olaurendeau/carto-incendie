@@ -40,6 +40,7 @@ const IconLibrary = ({ className }: { className?: string }) => (
 export const PhotosSection = ({ value: photos, onChange }: PhotosSectionProps) => {
   const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const captureInputRef = useRef<HTMLInputElement | null>(null);
   const libraryInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -47,7 +48,10 @@ export const PhotosSection = ({ value: photos, onChange }: PhotosSectionProps) =
     if (!fileList || fileList.length === 0) return;
 
     setIsUploading(true);
+    setUploadError(null);
     const toAdd: FirePhotoJson[] = [];
+    let failedCount = 0;
+    let notConfigured = false;
     try {
       for (const file of Array.from(fileList)) {
         const formData = new FormData();
@@ -57,10 +61,18 @@ export const PhotosSection = ({ value: photos, onChange }: PhotosSectionProps) =
         try {
           result = await uploadFirePhotoAction(formData);
         } catch {
+          failedCount += 1;
+          continue;
+        }
+
+        if (result.error === "NOT_CONFIGURED") {
+          notConfigured = true;
+          failedCount += 1;
           continue;
         }
 
         if (!result.url || !result.publicId) {
+          failedCount += 1;
           continue;
         }
 
@@ -68,6 +80,17 @@ export const PhotosSection = ({ value: photos, onChange }: PhotosSectionProps) =
       }
       if (toAdd.length > 0) {
         onChange([...photos, ...toAdd]);
+      }
+      if (notConfigured) {
+        setUploadError(
+          "L'hébergement des photos n'est pas configuré sur le serveur (CLOUDINARY_URL manquant)."
+        );
+      } else if (failedCount > 0) {
+        setUploadError(
+          failedCount === 1
+            ? "L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez."
+            : `L'envoi de ${failedCount} photos a échoué. Vérifiez votre connexion et réessayez.`
+        );
       }
     } finally {
       setIsUploading(false);
@@ -111,6 +134,12 @@ export const PhotosSection = ({ value: photos, onChange }: PhotosSectionProps) =
           Bibliothèque
         </button>
       </div>
+
+      {uploadError ? (
+        <p role="alert" className="mb-3 text-sm font-medium text-red-600">
+          {uploadError}
+        </p>
+      ) : null}
 
       <input
         ref={captureInputRef}

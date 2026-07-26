@@ -23,27 +23,37 @@ export const uploadFirePhotoAction = async (
     return { url: null, publicId: null, error: "NO_FILE" };
   }
 
+  // Sans CLOUDINARY_URL, le SDK lève « Must supply api_key » : on renvoie une
+  // erreur identifiable plutôt qu'une 500 opaque côté client.
+  if (!process.env.CLOUDINARY_URL) {
+    return { url: null, publicId: null, error: "NOT_CONFIGURED" };
+  }
+
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
   return new Promise<UploadedPhoto>((resolve) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: "fire-points",
-      },
-      (error, result) => {
-        if (error || !result) {
-          resolve({ url: null, publicId: null, error: "UPLOAD_FAILED" });
-          return;
+    try {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "fire-points",
+        },
+        (error, result) => {
+          if (error || !result) {
+            resolve({ url: null, publicId: null, error: "UPLOAD_FAILED" });
+            return;
+          }
+
+          resolve({
+            url: result.secure_url ?? null,
+            publicId: result.public_id ?? null,
+          });
         }
+      );
 
-        resolve({
-          url: result.secure_url ?? null,
-          publicId: result.public_id ?? null,
-        });
-      }
-    );
-
-    stream.end(buffer);
+      stream.end(buffer);
+    } catch {
+      resolve({ url: null, publicId: null, error: "UPLOAD_FAILED" });
+    }
   });
 };
