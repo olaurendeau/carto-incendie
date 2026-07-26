@@ -2,7 +2,9 @@
 
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
-// Augmente L.Map avec `.pm` — chargé uniquement côté client (ssr:false).
+// Expose window.L puis charge geoman (augmente L.Map avec `.pm`) —
+// uniquement côté client (ssr:false).
+import "@/components/map/geoman-setup";
 import "@geoman-io/leaflet-geoman-free";
 import { useState } from "react";
 import { CircleMarker, MapContainer, TileLayer } from "react-leaflet";
