@@ -61,6 +61,29 @@ const MapCenterToPosition = ({ position }: MapCenterToPositionProps) => {
   return null;
 };
 
+const isTouchDevice = (): boolean =>
+  typeof window !== "undefined" && "ontouchstart" in window;
+
+/**
+ * Sur mobile, la mini-carte ne doit pas capter le scroll de la page :
+ * 1 doigt = défilement de la page (et tap pour placer le point),
+ * 2 doigts = déplacer / zoomer la carte (touchZoom de Leaflet).
+ */
+const TouchScrollGuard = () => {
+  const map = useMap();
+  useEffect(() => {
+    if (!isTouchDevice()) return;
+    const container = map.getContainer();
+    // Leaflet force touch-action: none ; pan-y rend le scroll vertical au navigateur.
+    container.style.touchAction = "pan-y";
+    map.dragging.disable();
+    return () => {
+      map.dragging.enable();
+    };
+  }, [map]);
+  return null;
+};
+
 type MapPickerProps = {
   position: { latitude: number; longitude: number } | null;
   initialZoom?: number;
@@ -79,6 +102,7 @@ export const MapPicker = ({
 }: MapPickerProps) => {
   // Composant chargé en ssr:false uniquement : lecture localStorage sûre à l'init.
   const [tileLayer] = useState<MapBackgroundId>(() => getStoredTileLayer());
+  const [isTouch] = useState(() => isTouchDevice());
 
   const center: [number, number] = position
     ? [position.latitude, position.longitude]
@@ -110,6 +134,7 @@ export const MapPicker = ({
         <MapCenterToPosition
           position={position ? [position.latitude, position.longitude] : null}
         />
+        <TouchScrollGuard />
         {position ? (
           <Marker
             position={[position.latitude, position.longitude]}
@@ -119,6 +144,14 @@ export const MapPicker = ({
           />
         ) : null}
       </MapContainer>
+      {isTouch ? (
+        <span
+          className="pointer-events-none absolute bottom-2 left-2 z-[500] rounded-md bg-white/85 px-2 py-1 text-[11px] font-medium text-zinc-600 shadow-sm"
+          aria-hidden
+        >
+          2 doigts pour déplacer la carte
+        </span>
+      ) : null}
     </div>
   );
 };
