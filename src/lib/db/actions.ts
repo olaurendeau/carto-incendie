@@ -187,6 +187,30 @@ export const updateFirePointAction = async (
   }
 };
 
+export const deleteFirePointAction = async (
+  id: string
+): Promise<{ ok: true } | { ok: false; error: string }> => {
+  try {
+    const [row] = await db
+      .delete(firePointsTable)
+      .where(eq(firePointsTable.id, id))
+      .returning({ zoneId: firePointsTable.zoneId });
+
+    if (!row) {
+      return { ok: false, error: "Point d'incendie introuvable" };
+    }
+
+    revalidatePath(`/zone/${row.zoneId}`);
+    return { ok: true };
+  } catch (err) {
+    console.error("deleteFirePointAction error:", err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Erreur serveur",
+    };
+  }
+};
+
 export const confirmFirePointAction = async (
   id: string
 ): Promise<ActionResult<{ confirmations: number }>> => {

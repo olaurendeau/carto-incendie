@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DeleteFirePointButton } from "@/components/fire/DeleteFirePointButton";
 import { FirePointForm } from "@/components/fire/FirePointForm";
+import { SharePointButton } from "@/components/fire/SharePointButton";
 import { getFirePointById, getZonePublic } from "@/lib/queries";
 import type { FirePointFormData } from "@/types/fire";
 
@@ -51,12 +53,21 @@ export default async function EditFirePointPage({
           Modifier le point d&apos;incendie
         </h1>
         <p className="text-sm text-zinc-500">Zone : {zone.name}</p>
+        <div className="mt-3">
+          <SharePointButton
+            latitude={point.latitude}
+            longitude={point.longitude}
+          />
+        </div>
       </header>
       <FirePointForm
         zoneId={zone.id}
         pointId={point.id}
         initialData={initialData}
       />
+      <div className="mt-8">
+        <DeleteFirePointButton pointId={point.id} zoneId={zone.id} />
+      </div>
     </div>
   );
 }
