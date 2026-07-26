@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { MapLongPressHandler } from "@/components/map/MapLongPressHandler";
 import { ConfirmButton } from "@/components/fire/ConfirmButton";
+import { SharePointButton } from "@/components/fire/SharePointButton";
 import { getMarkerAppearance } from "@/lib/fire-marker";
 import { MAP_BACKGROUNDS, type MapBackgroundId } from "@/lib/map-layers";
 import type { FirePoint } from "@/lib/db/schema";
@@ -195,6 +196,11 @@ export const FireMap = ({
                     Modifier
                   </Link>
                 </div>
+                <SharePointButton
+                  latitude={point.latitude}
+                  longitude={point.longitude}
+                  compact
+                />
               </div>
             </Popup>
           </Marker>
