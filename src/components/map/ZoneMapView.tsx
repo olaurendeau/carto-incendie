@@ -1,10 +1,10 @@
 "use client";
 
-import { Layers } from "lucide-react";
+import { Filter, Layers } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   MAP_BACKGROUNDS,
   MAP_BACKGROUND_IDS,
@@ -13,6 +13,10 @@ import {
   type MapBackgroundId,
 } from "@/lib/map-layers";
 import type { FirePoint, PublicZone } from "@/lib/db/schema";
+import { STATUT_KEYS, STATUT_LABELS, type Statut } from "@/types/fire";
+
+/** Par défaut, seuls les points en cours sont visibles sur la carte. */
+const DEFAULT_VISIBLE_STATUTS: Statut[] = ["en_cours"];
 
 const DynamicFireMap = dynamic(
   () => import("@/components/map/FireMap").then((m) => ({ default: m.FireMap })),
@@ -61,6 +65,10 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
     getStoredTileLayer()
   );
   const [isLayersOpen, setIsLayersOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [visibleStatuts, setVisibleStatuts] = useState<Statut[]>(
+    DEFAULT_VISIBLE_STATUTS
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [longPressLocation, setLongPressLocation] = useState<{
     lat: number;
@@ -84,6 +92,29 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
     setTileLayer(id);
     setIsLayersOpen(false);
   }, []);
+
+  const handleToggleLayers = useCallback(() => {
+    setIsFilterOpen(false);
+    setIsLayersOpen((prev) => !prev);
+  }, []);
+
+  const handleToggleFilter = useCallback(() => {
+    setIsLayersOpen(false);
+    setIsFilterOpen((prev) => !prev);
+  }, []);
+
+  const handleToggleStatut = useCallback((statut: Statut) => {
+    setVisibleStatuts((prev) =>
+      prev.includes(statut)
+        ? prev.filter((s) => s !== statut)
+        : [...prev, statut]
+    );
+  }, []);
+
+  const filteredPoints = useMemo(
+    () => points.filter((point) => visibleStatuts.includes(point.statut)),
+    [points, visibleStatuts]
+  );
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -115,25 +146,26 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
   }, [longPressLocation, handleDismissLongPress]);
 
   useEffect(() => {
-    if (!isLayersOpen) return;
+    if (!isLayersOpen && !isFilterOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (
         controlsRef.current != null &&
         !controlsRef.current.contains(e.target as Node)
       ) {
         setIsLayersOpen(false);
+        setIsFilterOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isLayersOpen]);
+  }, [isLayersOpen, isFilterOpen]);
 
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
         <DynamicFireMap
           zoneId={zone.id}
-          points={points}
+          points={filteredPoints}
           center={[zone.centerLat, zone.centerLng]}
           zoom={zone.zoom}
           tileLayer={tileLayer}
@@ -160,7 +192,7 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
         <div className="relative flex flex-row-reverse items-start gap-2">
           <button
             type="button"
-            onClick={() => setIsLayersOpen((prev) => !prev)}
+            onClick={handleToggleLayers}
             className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl bg-zinc-900 p-3 text-white shadow-lg transition-colors hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 active:bg-zinc-800"
             aria-expanded={isLayersOpen}
             aria-haspopup="menu"
@@ -197,6 +229,71 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
                   ) : null}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+        <div className="relative flex flex-row-reverse items-start gap-2">
+          <button
+            type="button"
+            onClick={handleToggleFilter}
+            className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl bg-zinc-900 p-3 text-white shadow-lg transition-colors hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 active:bg-zinc-800"
+            aria-expanded={isFilterOpen}
+            aria-haspopup="menu"
+            aria-label="Filtrer les points par statut"
+            tabIndex={0}
+          >
+            <Filter size={24} aria-hidden />
+          </button>
+          {isFilterOpen && (
+            <div
+              role="menu"
+              className="absolute right-full top-0 mr-2 flex w-56 flex-col gap-4 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur"
+              aria-label="Filtre des points par statut"
+            >
+              <div
+                role="group"
+                aria-label="Statuts affichés"
+                className="flex flex-col gap-2"
+              >
+                <span className="text-sm font-medium text-zinc-700">
+                  Statuts affichés
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  {STATUT_KEYS.map((statut) => {
+                    const isChecked = visibleStatuts.includes(statut);
+                    return (
+                      <button
+                        key={statut}
+                        type="button"
+                        onClick={() => handleToggleStatut(statut)}
+                        className={`flex min-h-[48px] items-center justify-between gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
+                          isChecked
+                            ? "bg-zinc-900 text-white"
+                            : "bg-zinc-50 text-zinc-700 hover:bg-zinc-100 active:bg-zinc-200"
+                        }`}
+                        aria-pressed={isChecked}
+                        aria-label={`${isChecked ? "Masquer" : "Afficher"} les points « ${STATUT_LABELS[statut]} »`}
+                        tabIndex={0}
+                      >
+                        {STATUT_LABELS[statut]}
+                        <span
+                          className={`min-w-[1.5rem] text-right ${
+                            isChecked ? "text-emerald-400" : "text-zinc-400"
+                          }`}
+                          aria-hidden
+                        >
+                          {isChecked ? "✓" : "—"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="text-xs text-zinc-500">
+                {filteredPoints.length} point
+                {filteredPoints.length !== 1 ? "s" : ""} affiché
+                {filteredPoints.length !== 1 ? "s" : ""} sur {points.length}
+              </p>
             </div>
           )}
         </div>
