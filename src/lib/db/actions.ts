@@ -1,10 +1,20 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { FirePointFormData, ZoneFormData } from "@/types/fire";
+import type {
+  FirePointFormData,
+  ZoneFeatureFormData,
+  ZoneFormData,
+} from "@/types/fire";
 import { db } from "@/lib/db";
-import { firePointsTable, zonesTable } from "@/lib/db/schema";
+import {
+  firePointsTable,
+  zoneFeaturesTable,
+  zonesTable,
+  type ZoneFeature,
+} from "@/lib/db/schema";
+import { validateZoneFeatureData } from "@/lib/feature-style";
 
 type ActionResult<T = { id: string }> =
   | ({ ok: true } & T)
@@ -180,6 +190,145 @@ export const updateFirePointAction = async (
     return { ok: true, id: row.id };
   } catch (err) {
     console.error("updateFirePointAction error:", err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Erreur serveur",
+    };
+  }
+};
+
+const INVALID_ADMIN_LINK = "Lien d'administration invalide";
+
+/** Sous-requête : zones dont le token admin correspond. */
+const zonesWithToken = (token: string) =>
+  db
+    .select({ id: zonesTable.id })
+    .from(zonesTable)
+    .where(eq(zonesTable.adminToken, token));
+
+export const createZoneFeatureAction = async (
+  zoneId: string,
+  token: string,
+  data: ZoneFeatureFormData
+): Promise<ActionResult<{ feature: ZoneFeature }>> => {
+  if (!UUID_RE.test(token)) {
+    return { ok: false, error: INVALID_ADMIN_LINK };
+  }
+  const validationError = validateZoneFeatureData(data);
+  if (validationError) {
+    return { ok: false, error: validationError };
+  }
+
+  try {
+    const [zone] = await db
+      .select({ id: zonesTable.id })
+      .from(zonesTable)
+      .where(and(eq(zonesTable.id, zoneId), eq(zonesTable.adminToken, token)))
+      .limit(1);
+    if (!zone) {
+      return { ok: false, error: INVALID_ADMIN_LINK };
+    }
+
+    const [feature] = await db
+      .insert(zoneFeaturesTable)
+      .values({
+        zoneId,
+        kind: data.kind,
+        geometryType: data.geometryType,
+        coordinates: data.coordinates,
+        label: data.label.trim() || null,
+        color: data.kind === "autre" ? data.color : null,
+      })
+      .returning();
+
+    if (!feature) {
+      return { ok: false, error: "Échec de l'enregistrement" };
+    }
+
+    revalidatePath(`/zone/${zoneId}`);
+    return { ok: true, feature };
+  } catch (err) {
+    console.error("createZoneFeatureAction error:", err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Erreur serveur",
+    };
+  }
+};
+
+export const updateZoneFeatureAction = async (
+  id: string,
+  token: string,
+  data: ZoneFeatureFormData
+): Promise<ActionResult<{ feature: ZoneFeature }>> => {
+  if (!UUID_RE.test(token)) {
+    return { ok: false, error: INVALID_ADMIN_LINK };
+  }
+  const validationError = validateZoneFeatureData(data);
+  if (validationError) {
+    return { ok: false, error: validationError };
+  }
+
+  try {
+    // kind et geometryType sont immuables après création.
+    const [feature] = await db
+      .update(zoneFeaturesTable)
+      .set({
+        coordinates: data.coordinates,
+        label: data.label.trim() || null,
+        color: data.kind === "autre" ? data.color : null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(zoneFeaturesTable.id, id),
+          inArray(zoneFeaturesTable.zoneId, zonesWithToken(token))
+        )
+      )
+      .returning();
+
+    if (!feature) {
+      return { ok: false, error: INVALID_ADMIN_LINK };
+    }
+
+    revalidatePath(`/zone/${feature.zoneId}`);
+    return { ok: true, feature };
+  } catch (err) {
+    console.error("updateZoneFeatureAction error:", err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Erreur serveur",
+    };
+  }
+};
+
+export const deleteZoneFeatureAction = async (
+  id: string,
+  token: string
+): Promise<{ ok: true } | { ok: false; error: string }> => {
+  if (!UUID_RE.test(token)) {
+    return { ok: false, error: INVALID_ADMIN_LINK };
+  }
+
+  try {
+    const [row] = await db
+      .delete(zoneFeaturesTable)
+      .where(
+        and(
+          eq(zoneFeaturesTable.id, id),
+          inArray(zoneFeaturesTable.zoneId, zonesWithToken(token))
+        )
+      )
+      .returning({ zoneId: zoneFeaturesTable.zoneId });
+
+    if (!row) {
+      return { ok: false, error: INVALID_ADMIN_LINK };
+    }
+
+    revalidatePath(`/zone/${row.zoneId}`);
+    return { ok: true };
+  } catch (err) {
+    console.error("deleteZoneFeatureAction error:", err);
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Erreur serveur",
