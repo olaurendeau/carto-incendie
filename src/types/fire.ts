@@ -18,11 +18,10 @@ export const CRITICITE_COLORS: Record<Criticite, string> = {
 /** Notice affichée sous le sélecteur de criticité. */
 export const CRITICITE_DESCRIPTIONS: Record<Criticite, string> = {
   fumerolle:
-    "Petite fumée localisée, sans flamme visible. Départ de feu possible ou reste d'un foyer : à surveiller.",
+    "Petite fumée localisée, sans flamme visible. Peut correspondre à un départ de feu ou au reste d'un foyer.",
   grosse_fumee:
-    "Fumée importante ou colonne de fumée visible de loin. Foyer probablement actif : signalement prioritaire.",
-  flamme:
-    "Flammes visibles. Incendie déclaré nécessitant une intervention rapide.",
+    "Fumée importante ou colonne de fumée visible de loin. Foyer probablement actif.",
+  flamme: "Flammes visibles.",
 };
 
 /** Statut d'un point d'incendie. */
