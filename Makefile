@@ -6,14 +6,18 @@
 NODE_IMAGE       ?= node:22-bookworm-slim
 PLAYWRIGHT_IMAGE ?= mcr.microsoft.com/playwright:v1.49.1-noble
 
-# UID/GID de l'hôte, transmis à compose pour que les fichiers créés dans les
-# bind mounts (node_modules, .next…) ne soient pas root-owned sous Linux.
-COMPOSE = UID=$(shell id -u) GID=$(shell id -g) \
+UID := $(shell id -u)
+GID := $(shell id -g)
+
+# UID/GID de l'hôte, transmis à compose pour que les fichiers créés dans le
+# bind mount (node_modules…) ne soient pas root-owned sous Linux.
+# Nommés HOST_* car UID/GID sont readonly dans certains shells (macOS).
+COMPOSE = HOST_UID=$(UID) HOST_GID=$(GID) \
 	NODE_IMAGE=$(NODE_IMAGE) PLAYWRIGHT_IMAGE=$(PLAYWRIGHT_IMAGE) \
 	docker compose
 RUN = $(COMPOSE) run --rm app
 
-.PHONY: help env install dev down build start lint test test-e2e db-push db-studio sh clean
+.PHONY: help env install prepare dev down build start lint test test-e2e db-push db-studio sh clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -27,16 +31,20 @@ env: ## Crée .env.local depuis .env.example s'il n'existe pas
 install: .env.local ## Installe les dépendances (npm install)
 	$(RUN) npm install
 
-dev: .env.local ## Serveur de dev sur http://localhost:3000
+# Le volume next-cache est créé root : on le donne à l'utilisateur hôte.
+prepare: .env.local
+	@$(COMPOSE) run --rm --user 0:0 app chown $(UID):$(GID) /app/.next
+
+dev: prepare ## Serveur de dev sur http://localhost:3000
 	$(COMPOSE) up app
 
 down: ## Arrête et supprime les conteneurs compose
 	$(COMPOSE) down
 
-build: .env.local ## Build de production (next build)
+build: prepare ## Build de production (next build)
 	$(RUN) npm run build
 
-start: .env.local ## Serveur de production sur http://localhost:3000 (après make build)
+start: prepare ## Serveur de production sur http://localhost:3000 (après make build)
 	$(COMPOSE) run --rm --service-ports app npm run start -- -H 0.0.0.0
 
 lint: .env.local ## Lint (eslint)
@@ -57,5 +65,7 @@ db-studio: .env.local ## Drizzle Studio (ouvrir https://local.drizzle.studio)
 sh: .env.local ## Shell dans le conteneur node
 	$(RUN) bash
 
-clean: ## Supprime node_modules, .next et les rapports de tests
-	$(COMPOSE) run --rm --user 0:0 app rm -rf node_modules .next playwright-report test-results
+clean: ## Supprime node_modules, les volumes (.next, cache Playwright) et les rapports de tests
+	$(COMPOSE) run --rm --user 0:0 app sh -c "rm -rf node_modules playwright-report test-results"
+	$(COMPOSE) down -v
+	rm -rf .next

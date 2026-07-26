@@ -3,7 +3,7 @@
 x-node: &node
   image: ${NODE_IMAGE:-node:22-bookworm-slim}
   working_dir: /app
-  user: "${UID:-1000}:${GID:-1000}"
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
   environment:
     HOME: /tmp
   env_file: .env.local
@@ -14,6 +14,11 @@ services:
   # Serveur de dev Next.js — `make dev` ou `docker compose up`
   app:
     <<: *node
+    volumes:
+      # .next vit dans un volume nommé : le cache Turbopack se corrompt sur le
+      # bind mount partagé avec l'hôte (panics au Fast Refresh, manifests perdus).
+      - .:/app
+      - next-cache:/app/.next
     ports:
       - "3000:3000"
     # Le rm purge un éventuel verrou orphelin (conteneur tué sans arrêt propre).
@@ -34,7 +39,7 @@ services:
     image: ${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.49.1-noble}
     profiles: [test]
     working_dir: /app
-    user: "${UID:-1000}:${GID:-1000}"
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
       HOME: /tmp
     env_file: .env.local
@@ -45,4 +50,5 @@ services:
     command: sh -c "npx playwright install chromium && npx playwright test"
 
 volumes:
+  next-cache:
   pw-cache:
