@@ -148,7 +148,10 @@ export const MapPicker = ({
           <Marker
             position={[position.latitude, position.longitude]}
             icon={markerIcon}
-            draggable
+            // Sur tactile, un marqueur draggable capte le swipe (le doigt part
+            // souvent du centre de la carte) et bloque le scroll de la page :
+            // on repositionne par tap, le drag reste possible à la souris.
+            draggable={!isTouch}
             eventHandlers={{ dragend: handleDragEnd }}
           />
         ) : null}
