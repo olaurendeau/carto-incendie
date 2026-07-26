@@ -28,6 +28,8 @@ export default async function EditFirePointPage({
     longitude: point.longitude,
     criticite: point.criticite,
     statut: point.statut,
+    statutByName: point.statutByName ?? "",
+    statutByQualite: point.statutByQualite,
     note: point.note ?? "",
     photos: point.photos,
     creatorName: point.creatorName ?? "",

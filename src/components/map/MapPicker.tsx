@@ -35,7 +35,8 @@ const MapEvents = ({ onSelect, onZoomChange }: MapEventsProps) => {
       onSelect(e.latlng.lat, e.latlng.lng);
     },
     zoomend: () => {
-      onZoomChange?.(map.getZoom());
+      // getZoom() peut être fractionnaire pendant une animation flyTo : on arrondit.
+      onZoomChange?.(Math.round(map.getZoom()));
     },
   });
   return null;

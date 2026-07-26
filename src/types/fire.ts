@@ -15,13 +15,34 @@ export const CRITICITE_COLORS: Record<Criticite, string> = {
   flamme: "#dc2626",
 };
 
+/** Notice affichée sous le sélecteur de criticité. */
+export const CRITICITE_DESCRIPTIONS: Record<Criticite, string> = {
+  fumerolle:
+    "Petite fumée localisée, sans flamme visible. Départ de feu possible ou reste d'un foyer : à surveiller.",
+  grosse_fumee:
+    "Fumée importante ou colonne de fumée visible de loin. Foyer probablement actif : signalement prioritaire.",
+  flamme:
+    "Flammes visibles. Incendie déclaré nécessitant une intervention rapide.",
+};
+
 /** Statut d'un point d'incendie. */
-export const STATUT_KEYS = ["en_cours", "traite"] as const;
+export const STATUT_KEYS = ["en_cours", "traite", "disparu"] as const;
 export type Statut = (typeof STATUT_KEYS)[number];
 
 export const STATUT_LABELS: Record<Statut, string> = {
   en_cours: "En cours",
   traite: "Traité",
+  disparu: "Disparu",
+};
+
+/** Notice affichée sous le sélecteur de statut. */
+export const STATUT_DESCRIPTIONS: Record<Statut, string> = {
+  en_cours:
+    "L'incendie est toujours actif et nécessite une surveillance. Le marqueur reste coloré selon sa criticité.",
+  traite:
+    "L'incendie a été éteint ou maîtrisé par une intervention. Le marqueur devient gris avec une coche verte.",
+  disparu:
+    "L'incendie n'est plus observable sur place (plus de fumée ni de flamme), sans intervention connue. Le marqueur devient gris.",
 };
 
 /** Qualité du créateur d'un point d'incendie (pas de login formel). */
@@ -47,6 +68,9 @@ export type FirePointFormData = {
   longitude: number | null;
   criticite: Criticite | null;
   statut: Statut;
+  /** Identité de la personne qui indique le statut « traité » ou « disparu ». */
+  statutByName: string;
+  statutByQualite: Qualite | null;
   note: string;
   photos: FirePhotoJson[];
   creatorName: string;

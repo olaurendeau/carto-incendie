@@ -30,7 +30,7 @@ export const createZoneAction = async (
         name: data.name.trim(),
         centerLat: data.centerLat,
         centerLng: data.centerLng,
-        zoom: data.zoom,
+        zoom: Math.round(data.zoom),
       })
       .returning({ id: zonesTable.id, adminToken: zonesTable.adminToken });
 
@@ -72,7 +72,7 @@ export const updateZoneAction = async (
         name: data.name.trim(),
         centerLat: data.centerLat,
         centerLng: data.centerLng,
-        zoom: data.zoom,
+        zoom: Math.round(data.zoom),
         updatedAt: new Date(),
       })
       .where(and(eq(zonesTable.id, id), eq(zonesTable.adminToken, token)))
@@ -114,6 +114,10 @@ export const createFirePointAction = async (
         longitude: data.longitude,
         criticite: data.criticite,
         statut: data.statut,
+        statutByName:
+          data.statut === "en_cours" ? null : data.statutByName.trim() || null,
+        statutByQualite:
+          data.statut === "en_cours" ? null : data.statutByQualite,
         note: data.note.trim() || null,
         photos: data.photos,
         creatorName: data.creatorName.trim() || null,
@@ -155,6 +159,10 @@ export const updateFirePointAction = async (
         longitude: data.longitude,
         criticite: data.criticite,
         statut: data.statut,
+        statutByName:
+          data.statut === "en_cours" ? null : data.statutByName.trim() || null,
+        statutByQualite:
+          data.statut === "en_cours" ? null : data.statutByQualite,
         note: data.note.trim() || null,
         photos: data.photos,
         creatorName: data.creatorName.trim() || null,

@@ -57,7 +57,9 @@ npx drizzle-kit migrate    # Applique les migrations (lit .env.local)
 - `zones` : id, name, centerLat/centerLng, zoom, **adminToken** (uuid),
   createdAt/updatedAt.
 - `fire_points` : id, zoneId (FK cascade), latitude/longitude, criticite
-  (`fumerolle | grosse_fumee | flamme`), statut (`en_cours | traite`), note,
+  (`fumerolle | grosse_fumee | flamme`), statut
+  (`en_cours | traite | disparu`), statutByName/statutByQualite (qui a
+  indiqué le statut traité/disparu — remis à null si retour en cours), note,
   photos (jsonb), confirmations (int), creatorName, creatorQualite
   (`pompier | elu | habitant | autre`), createdAt/updatedAt.
 
@@ -80,8 +82,10 @@ Les enums sont des colonnes `text` + unions TypeScript dans
 - `params` / `searchParams` des pages sont des **Promises** (Next 16) :
   toujours `await`.
 - Marqueurs : couleur = criticité (jaune/orange/rouge), gris + bordure verte
-  + ✓ quand traité, `+N` = confirmations. Logique pure testable dans
-  `src/lib/fire-marker.ts`.
+  + ✓ quand traité, gris + tiret quand disparu, `+N` = confirmations.
+  Logique pure testable dans `src/lib/fire-marker.ts`. Les notices des
+  criticités/statuts vivent dans `CRITICITE_DESCRIPTIONS` /
+  `STATUT_DESCRIPTIONS` (`src/types/fire.ts`).
 
 ## Clés localStorage
 

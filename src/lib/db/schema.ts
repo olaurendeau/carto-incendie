@@ -34,6 +34,9 @@ export const firePointsTable = pgTable("fire_points", {
   longitude: doublePrecision("longitude").notNull(),
   criticite: text("criticite").$type<Criticite>().notNull(),
   statut: text("statut").$type<Statut>().notNull().default("en_cours"),
+  // Qui a indiqué le statut « traité » / « disparu » (pas forcément le créateur).
+  statutByName: text("statut_by_name"),
+  statutByQualite: text("statut_by_qualite").$type<Qualite>(),
   note: text("note"),
   photos: jsonb("photos").$type<FirePhotoJson[]>().notNull().default([]),
   confirmations: integer("confirmations").notNull().default(0),

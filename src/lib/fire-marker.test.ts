@@ -26,4 +26,11 @@ describe("getMarkerAppearance", () => {
     expect(appearance.borderColor).toBe("#22c55e");
     expect(appearance.symbol).toBe("✓");
   });
+
+  it("grise le marqueur avec un tiret quand le point est disparu", () => {
+    const appearance = getMarkerAppearance("fumerolle", "disparu", 2);
+    expect(appearance.color).toBe("#9ca3af");
+    expect(appearance.borderColor).toBe("#e4e4e7");
+    expect(appearance.symbol).toBe("—");
+  });
 });

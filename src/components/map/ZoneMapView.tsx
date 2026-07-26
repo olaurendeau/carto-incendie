@@ -141,7 +141,8 @@ export const ZoneMapView = ({ zone, points: initialPoints }: ZoneMapViewProps) =
         />
       </div>
 
-      <div className="absolute left-3 top-3 z-[500] max-w-[60%]">
+      {/* Décalé à droite pour ne pas recouvrir les contrôles de zoom Leaflet. */}
+      <div className="absolute left-16 top-3 z-[500] max-w-[55%]">
         <Link
           href="/"
           className="block truncate rounded-xl border border-zinc-200 bg-white/95 px-4 py-3 text-sm font-semibold text-zinc-900 shadow-lg backdrop-blur focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"

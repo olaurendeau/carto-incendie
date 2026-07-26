@@ -103,6 +103,12 @@ export const FireMap = ({
         ]
           .filter((part): part is string => !!part)
           .join(" · ");
+        const statutBySummary = [
+          point.statutByName?.trim() || null,
+          point.statutByQualite ? QUALITE_LABELS[point.statutByQualite] : null,
+        ]
+          .filter((part): part is string => !!part)
+          .join(" · ");
         return (
           <Marker
             key={point.id}
@@ -119,7 +125,9 @@ export const FireMap = ({
                     className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       point.statut === "traite"
                         ? "bg-emerald-100 text-emerald-700"
-                        : "bg-red-100 text-red-700"
+                        : point.statut === "disparu"
+                          ? "bg-zinc-200 text-zinc-600"
+                          : "bg-red-100 text-red-700"
                     }`}
                   >
                     {STATUT_LABELS[point.statut]}
@@ -136,6 +144,14 @@ export const FireMap = ({
                     <dt className="shrink-0 font-medium text-zinc-500">Le</dt>
                     <dd>{formatCreatedAt(point.createdAt)}</dd>
                   </div>
+                  {point.statut !== "en_cours" && statutBySummary ? (
+                    <div className="flex gap-2">
+                      <dt className="shrink-0 font-medium text-zinc-500">
+                        {STATUT_LABELS[point.statut]} par
+                      </dt>
+                      <dd>{statutBySummary}</dd>
+                    </div>
+                  ) : null}
                   {point.note ? (
                     <div className="flex gap-2">
                       <dt className="shrink-0 font-medium text-zinc-500">

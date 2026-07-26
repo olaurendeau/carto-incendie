@@ -12,10 +12,12 @@ import { getCurrentPosition } from "@/lib/geo";
 import { getStoredIdentity, saveIdentity } from "@/lib/storage";
 import {
   CRITICITE_COLORS,
+  CRITICITE_DESCRIPTIONS,
   CRITICITE_KEYS,
   CRITICITE_LABELS,
   QUALITE_KEYS,
   QUALITE_LABELS,
+  STATUT_DESCRIPTIONS,
   STATUT_KEYS,
   STATUT_LABELS,
   type Criticite,
@@ -70,6 +72,12 @@ export const FirePointForm = ({
     initialData?.criticite ?? null
   );
   const [statut, setStatut] = useState<Statut>(initialData?.statut ?? "en_cours");
+  const [statutByName, setStatutByName] = useState(
+    initialData?.statutByName ?? ""
+  );
+  const [statutByQualite, setStatutByQualite] = useState<Qualite | null>(
+    initialData?.statutByQualite ?? null
+  );
   const [note, setNote] = useState(initialData?.note ?? "");
   const [photos, setPhotos] = useState<FirePhotoJson[]>(
     initialData?.photos ?? []
@@ -114,6 +122,19 @@ export const FirePointForm = ({
     setLongitude(lng);
   }, []);
 
+  // Au passage à « traité » / « disparu », proposer l'identité mémorisée du
+  // déclarant (pas forcément le créateur du point).
+  const handleStatutChange = (key: Statut) => {
+    setStatut(key);
+    if (key !== "en_cours" && !statutByName && statutByQualite == null) {
+      const identity = getStoredIdentity();
+      if (identity) {
+        setStatutByName(identity.name);
+        setStatutByQualite(identity.qualite);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -137,6 +158,8 @@ export const FirePointForm = ({
         longitude,
         criticite,
         statut,
+        statutByName,
+        statutByQualite,
         note,
         photos,
         creatorName,
@@ -209,6 +232,11 @@ export const FirePointForm = ({
             );
           })}
         </div>
+        {criticite ? (
+          <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+            {CRITICITE_DESCRIPTIONS[criticite]}
+          </p>
+        ) : null}
       </section>
 
       {isEdit ? (
@@ -217,16 +245,20 @@ export const FirePointForm = ({
           <div className="flex gap-2">
             {STATUT_KEYS.map((key) => {
               const isSelected = statut === key;
+              const selectedClasses =
+                key === "traite"
+                  ? "border-transparent bg-emerald-600 text-white"
+                  : key === "disparu"
+                    ? "border-transparent bg-zinc-500 text-white"
+                    : "border-transparent bg-red-600 text-white";
               return (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setStatut(key)}
-                  className={`min-h-[48px] flex-1 rounded-xl border-2 px-4 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
+                  onClick={() => handleStatutChange(key)}
+                  className={`min-h-[48px] flex-1 rounded-xl border-2 px-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
                     isSelected
-                      ? key === "traite"
-                        ? "border-transparent bg-emerald-600 text-white"
-                        : "border-transparent bg-red-600 text-white"
+                      ? selectedClasses
                       : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500"
                   }`}
                   aria-pressed={isSelected}
@@ -238,6 +270,48 @@ export const FirePointForm = ({
               );
             })}
           </div>
+          <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+            {STATUT_DESCRIPTIONS[statut]}
+          </p>
+          {statut !== "en_cours" ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+              <p className="text-sm font-medium text-zinc-700">
+                Qui indique ce statut ?
+              </p>
+              <input
+                type="text"
+                value={statutByName}
+                onChange={(e) => setStatutByName(e.target.value)}
+                placeholder="Votre nom"
+                className="min-h-[48px] rounded-xl border border-zinc-300 bg-white px-4 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                aria-label="Nom de la personne qui indique ce statut"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                {QUALITE_KEYS.map((key) => {
+                  const isSelected = statutByQualite === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() =>
+                        setStatutByQualite(isSelected ? null : key)
+                      }
+                      className={`min-h-[48px] rounded-xl border-2 px-4 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
+                        isSelected
+                          ? "border-transparent bg-zinc-900 text-white"
+                          : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500"
+                      }`}
+                      aria-pressed={isSelected}
+                      aria-label={`Qualité : ${QUALITE_LABELS[key]}`}
+                      tabIndex={0}
+                    >
+                      {QUALITE_LABELS[key]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
