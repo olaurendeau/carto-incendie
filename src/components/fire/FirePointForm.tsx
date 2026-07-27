@@ -184,6 +184,7 @@ export const FirePointForm = ({
           initialZoom={15}
           onSelect={handleSelectPosition}
           initialView={defaultView}
+          showUserLocation
           height={220}
         />
         <p className="mt-2 text-sm text-zinc-500">

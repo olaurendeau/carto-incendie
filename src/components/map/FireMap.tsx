@@ -7,9 +7,13 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { MapLongPressHandler } from "@/components/map/MapLongPressHandler";
 import { ConfirmButton } from "@/components/fire/ConfirmButton";
 import { SharePointButton } from "@/components/fire/SharePointButton";
+import { useEffect, useRef } from "react";
+import { useMap } from "react-leaflet";
+import { UserLocationMarker } from "@/components/map/UserLocationMarker";
 import { ZoneFeaturesLayer } from "@/components/map/ZoneFeaturesLayer";
 import { getMarkerAppearance } from "@/lib/fire-marker";
 import { MAP_BACKGROUNDS, type MapBackgroundId } from "@/lib/map-layers";
+import type { GeoPositionWithAccuracy } from "@/lib/geo";
 import type { FirePoint, ZoneFeature } from "@/lib/db/schema";
 import {
   CRITICITE_LABELS,
@@ -70,6 +74,31 @@ const createFireMarkerIcon = (
   });
 };
 
+type FlyToUserProps = {
+  position: GeoPositionWithAccuracy | null;
+  token: number;
+};
+
+/** Recentre la carte sur la position quand le compteur est incrémenté. */
+const FlyToUser = ({ position, token }: FlyToUserProps) => {
+  const map = useMap();
+  const positionRef = useRef(position);
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+
+  useEffect(() => {
+    if (token === 0 || positionRef.current == null) return;
+    map.flyTo(
+      [positionRef.current.latitude, positionRef.current.longitude],
+      Math.max(map.getZoom(), 15),
+      { duration: 0.5 }
+    );
+  }, [token, map]);
+
+  return null;
+};
+
 const formatCreatedAt = (value: Date | string): string =>
   new Date(value).toLocaleString("fr-FR", {
     day: "2-digit",
@@ -86,6 +115,8 @@ type FireMapProps = {
   zoom: number;
   tileLayer?: MapBackgroundId;
   onLongPress?: (lat: number, lng: number) => void;
+  userLocation?: GeoPositionWithAccuracy | null;
+  flyToUserToken?: number;
 };
 
 export const FireMap = ({
@@ -96,6 +127,8 @@ export const FireMap = ({
   zoom,
   tileLayer = "topo",
   onLongPress,
+  userLocation = null,
+  flyToUserToken = 0,
 }: FireMapProps) => {
   return (
     <MapContainer
@@ -107,6 +140,10 @@ export const FireMap = ({
     >
       <TileLayer url={MAP_BACKGROUNDS[tileLayer].url} />
       <ZoneFeaturesLayer features={features} />
+      {userLocation != null ? (
+        <UserLocationMarker position={userLocation} />
+      ) : null}
+      <FlyToUser position={userLocation} token={flyToUserToken} />
       {onLongPress != null ? (
         <MapLongPressHandler onLongPress={onLongPress} />
       ) : null}

@@ -4,6 +4,11 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useCallback, useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { UserLocationMarker } from "@/components/map/UserLocationMarker";
+import {
+  watchCurrentPosition,
+  type GeoPositionWithAccuracy,
+} from "@/lib/geo";
 import {
   MAP_BACKGROUNDS,
   getStoredTileLayer,
@@ -92,6 +97,8 @@ type MapPickerProps = {
   onZoomChange?: (zoom: number) => void;
   /** Vue initiale quand aucune position n'est encore placée (ex. centre/zoom de la zone). */
   initialView?: { latitude: number; longitude: number; zoom: number };
+  /** Affiche la position de l'utilisateur (point bleu, suivi continu). */
+  showUserLocation?: boolean;
   height?: number;
 };
 
@@ -101,11 +108,20 @@ export const MapPicker = ({
   onSelect,
   onZoomChange,
   initialView,
+  showUserLocation = false,
   height = 300,
 }: MapPickerProps) => {
   // Composant chargé en ssr:false uniquement : lecture localStorage sûre à l'init.
   const [tileLayer] = useState<MapBackgroundId>(() => getStoredTileLayer());
   const [isTouch] = useState(() => isTouchDevice());
+  const [userLocation, setUserLocation] =
+    useState<GeoPositionWithAccuracy | null>(null);
+
+  // Suivi de la position ; silencieux si refusée/indisponible.
+  useEffect(() => {
+    if (!showUserLocation) return;
+    return watchCurrentPosition((pos) => setUserLocation(pos));
+  }, [showUserLocation]);
 
   const center: [number, number] = position
     ? [position.latitude, position.longitude]
@@ -144,6 +160,9 @@ export const MapPicker = ({
           position={position ? [position.latitude, position.longitude] : null}
         />
         <TouchScrollGuard />
+        {userLocation != null ? (
+          <UserLocationMarker position={userLocation} />
+        ) : null}
         {position ? (
           <Marker
             position={[position.latitude, position.longitude]}

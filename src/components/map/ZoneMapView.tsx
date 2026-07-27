@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, Layers } from "lucide-react";
+import { Filter, Layers, LocateFixed } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,10 @@ import {
   type MapBackgroundId,
 } from "@/lib/map-layers";
 import type { FirePoint, PublicZone, ZoneFeature } from "@/lib/db/schema";
+import {
+  watchCurrentPosition,
+  type GeoPositionWithAccuracy,
+} from "@/lib/geo";
 import { STATUT_KEYS, STATUT_LABELS, type Statut } from "@/types/fire";
 
 /** Par défaut, seuls les points en cours sont visibles sur la carte. */
@@ -75,11 +79,19 @@ export const ZoneMapView = ({
     DEFAULT_VISIBLE_STATUTS
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [userLocation, setUserLocation] =
+    useState<GeoPositionWithAccuracy | null>(null);
+  const [flyToUserToken, setFlyToUserToken] = useState(0);
   const [longPressLocation, setLongPressLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
+
+  // Suivi de la position dès l'ouverture ; silencieux si refusée/indisponible.
+  useEffect(() => {
+    return watchCurrentPosition((pos) => setUserLocation(pos));
+  }, []);
 
   // Resynchronise avec les points revalidés côté serveur.
   const [prevInitialPoints, setPrevInitialPoints] = useState(initialPoints);
@@ -176,6 +188,8 @@ export const ZoneMapView = ({
           zoom={zone.zoom}
           tileLayer={tileLayer}
           onLongPress={handleMapLongPress}
+          userLocation={userLocation}
+          flyToUserToken={flyToUserToken}
         />
       </div>
 
@@ -317,6 +331,17 @@ export const ZoneMapView = ({
         >
           <RefreshIcon spinning={isRefreshing} />
         </button>
+        {userLocation != null ? (
+          <button
+            type="button"
+            onClick={() => setFlyToUserToken((t) => t + 1)}
+            className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl bg-zinc-900 p-3 text-white shadow-lg transition-colors hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 active:bg-zinc-800"
+            aria-label="Recentrer la carte sur ma position"
+            tabIndex={0}
+          >
+            <LocateFixed size={24} aria-hidden />
+          </button>
+        ) : null}
       </div>
 
       <Link
