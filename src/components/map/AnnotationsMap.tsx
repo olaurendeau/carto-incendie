@@ -50,7 +50,11 @@ export const AnnotationsMap = ({
       scrollWheelZoom
       attributionControl={false}
     >
-      <TileLayer url={MAP_BACKGROUNDS[tileLayer].url} />
+      <TileLayer
+        key={tileLayer}
+        url={MAP_BACKGROUNDS[tileLayer].url}
+        maxNativeZoom={MAP_BACKGROUNDS[tileLayer].maxNativeZoom}
+      />
       {/* Points d'incendie en contexte, non interactifs. */}
       {firePoints.map((point) => (
         <CircleMarker

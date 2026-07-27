@@ -138,7 +138,11 @@ export const FireMap = ({
       scrollWheelZoom
       attributionControl={false}
     >
-      <TileLayer url={MAP_BACKGROUNDS[tileLayer].url} />
+      <TileLayer
+        key={tileLayer}
+        url={MAP_BACKGROUNDS[tileLayer].url}
+        maxNativeZoom={MAP_BACKGROUNDS[tileLayer].maxNativeZoom}
+      />
       <ZoneFeaturesLayer features={features} />
       {userLocation != null ? (
         <UserLocationMarker position={userLocation} />

@@ -154,7 +154,11 @@ export const MapPicker = ({
         scrollWheelZoom
         attributionControl={false}
       >
-        <TileLayer url={MAP_BACKGROUNDS[tileLayer].url} />
+        <TileLayer
+        key={tileLayer}
+        url={MAP_BACKGROUNDS[tileLayer].url}
+        maxNativeZoom={MAP_BACKGROUNDS[tileLayer].maxNativeZoom}
+      />
         <MapEvents onSelect={onSelect} onZoomChange={onZoomChange} />
         <MapCenterToPosition
           position={position ? [position.latitude, position.longitude] : null}

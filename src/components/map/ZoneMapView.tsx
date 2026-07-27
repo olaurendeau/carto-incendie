@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   MAP_BACKGROUNDS,
-  MAP_BACKGROUND_IDS,
+  getAvailableBackgroundIds,
   getStoredTileLayer,
   saveTileLayer,
   type MapBackgroundId,
@@ -227,7 +227,7 @@ export const ZoneMapView = ({
               className="absolute right-full top-0 mr-2 flex w-56 flex-col gap-1.5 rounded-xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur"
               aria-label="Fond de carte"
             >
-              {MAP_BACKGROUND_IDS.map((id) => (
+              {getAvailableBackgroundIds().map((id) => (
                 <button
                   key={id}
                   type="button"
