@@ -52,17 +52,19 @@ const KIND_BUTTON_LABELS: Record<FeatureKind, string> = {
 
 type AnnotationsEditorProps = {
   zone: PublicZone;
-  token: string;
+  /** Token admin ; null = mode public (ajout uniquement, pas de modification/suppression). */
+  token?: string | null;
   initialFeatures: ZoneFeature[];
   firePoints: FirePoint[];
 };
 
 export const AnnotationsEditor = ({
   zone,
-  token,
+  token = null,
   initialFeatures,
   firePoints,
 }: AnnotationsEditorProps) => {
+  const isAdmin = token != null;
   const [features, setFeatures] = useState<ZoneFeature[]>(initialFeatures);
   const [mode, setMode] = useState<EditorMode>("idle");
   const [draft, setDraft] = useState<FeatureDraft | null>(null);
@@ -117,7 +119,7 @@ export const AnnotationsEditor = ({
     async (coordinates: LatLngPoint[]) => {
       setMode("idle");
       if (draft == null) return;
-      const result = await createZoneFeatureAction(zone.id, token, {
+      const result = await createZoneFeatureAction(zone.id, {
         ...draft,
         coordinates,
       });
@@ -129,11 +131,12 @@ export const AnnotationsEditor = ({
       }
       setDraft(null);
     },
-    [draft, zone.id, token]
+    [draft, zone.id]
   );
 
   const handleUpdate = useCallback(
     async (featureId: string, coordinates: LatLngPoint[]) => {
+      if (token == null) return;
       const feature = features.find((f) => f.id === featureId);
       if (!feature) return;
       const result = await updateZoneFeatureAction(featureId, token, {
@@ -161,7 +164,7 @@ export const AnnotationsEditor = ({
   }, []);
 
   const handleConfirmRemoval = async () => {
-    if (pendingRemovalId == null) return;
+    if (pendingRemovalId == null || token == null) return;
     const id = pendingRemovalId;
     setPendingRemovalId(null);
     const result = await deleteZoneFeatureAction(id, token);
@@ -208,10 +211,16 @@ export const AnnotationsEditor = ({
       {/* Décalé à droite pour ne pas recouvrir les contrôles de zoom Leaflet. */}
       <div className="absolute left-16 top-3 z-[500] max-w-[70%]">
         <Link
-          href={`/zone/${zone.id}/edit?token=${token}`}
+          href={
+            isAdmin ? `/zone/${zone.id}/edit?token=${token}` : `/zone/${zone.id}`
+          }
           className="block truncate rounded-xl border border-zinc-200 bg-white/95 px-4 py-3 text-sm font-semibold text-zinc-900 shadow-lg backdrop-blur focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
           tabIndex={0}
-          aria-label="Retour à l'édition de la zone"
+          aria-label={
+            isAdmin
+              ? "Retour à l'édition de la zone"
+              : "Retour à la carte de la zone"
+          }
         >
           ← Annotations · {zone.name}
         </Link>
@@ -274,42 +283,46 @@ export const AnnotationsEditor = ({
                 {KIND_BUTTON_LABELS[kind]}
               </button>
             ))}
-            <button
-              type="button"
-              onClick={() => toggleMode("edit")}
-              className={`min-h-[48px] flex-1 basis-[45%] rounded-xl px-3 text-sm font-medium shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
-                mode === "edit"
-                  ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                  : "bg-white text-zinc-900 hover:bg-zinc-100"
-              }`}
-              aria-pressed={mode === "edit"}
-              tabIndex={0}
-              aria-label={
-                mode === "edit"
-                  ? "Terminer la modification des tracés"
-                  : "Modifier les tracés"
-              }
-            >
-              {mode === "edit" ? "Terminer ✓" : "Modifier les tracés"}
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleMode("remove")}
-              className={`min-h-[48px] flex-1 basis-[45%] rounded-xl px-3 text-sm font-medium shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
-                mode === "remove"
-                  ? "bg-red-600 text-white hover:bg-red-500"
-                  : "bg-white text-red-700 hover:bg-red-50"
-              }`}
-              aria-pressed={mode === "remove"}
-              tabIndex={0}
-              aria-label={
-                mode === "remove"
-                  ? "Quitter le mode suppression"
-                  : "Supprimer des annotations"
-              }
-            >
-              {mode === "remove" ? "Terminer ✓" : "Supprimer"}
-            </button>
+            {isAdmin ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => toggleMode("edit")}
+                  className={`min-h-[48px] flex-1 basis-[45%] rounded-xl px-3 text-sm font-medium shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
+                    mode === "edit"
+                      ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                      : "bg-white text-zinc-900 hover:bg-zinc-100"
+                  }`}
+                  aria-pressed={mode === "edit"}
+                  tabIndex={0}
+                  aria-label={
+                    mode === "edit"
+                      ? "Terminer la modification des tracés"
+                      : "Modifier les tracés"
+                  }
+                >
+                  {mode === "edit" ? "Terminer ✓" : "Modifier les tracés"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleMode("remove")}
+                  className={`min-h-[48px] flex-1 basis-[45%] rounded-xl px-3 text-sm font-medium shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                    mode === "remove"
+                      ? "bg-red-600 text-white hover:bg-red-500"
+                      : "bg-white text-red-700 hover:bg-red-50"
+                  }`}
+                  aria-pressed={mode === "remove"}
+                  tabIndex={0}
+                  aria-label={
+                    mode === "remove"
+                      ? "Quitter le mode suppression"
+                      : "Supprimer des annotations"
+                  }
+                >
+                  {mode === "remove" ? "Terminer ✓" : "Supprimer"}
+                </button>
+              </>
+            ) : null}
           </div>
         )}
       </div>

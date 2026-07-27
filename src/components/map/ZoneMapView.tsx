@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, Layers, LocateFixed } from "lucide-react";
+import { Filter, Layers, LocateFixed, PenLine } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -331,6 +331,14 @@ export const ZoneMapView = ({
         >
           <RefreshIcon spinning={isRefreshing} />
         </button>
+        <Link
+          href={`/zone/${zone.id}/annotations`}
+          className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl bg-zinc-900 p-3 text-white shadow-lg transition-colors hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 active:bg-zinc-800"
+          aria-label="Ajouter une annotation sur la carte"
+          tabIndex={0}
+        >
+          <PenLine size={24} aria-hidden />
+        </Link>
         {userLocation != null ? (
           <button
             type="button"

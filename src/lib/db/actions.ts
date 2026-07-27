@@ -206,14 +206,14 @@ const zonesWithToken = (token: string) =>
     .from(zonesTable)
     .where(eq(zonesTable.adminToken, token));
 
+/**
+ * Création ouverte à tous (pas de token) — comme les points d'incendie.
+ * La modification et la suppression restent réservées au lien admin.
+ */
 export const createZoneFeatureAction = async (
   zoneId: string,
-  token: string,
   data: ZoneFeatureFormData
 ): Promise<ActionResult<{ feature: ZoneFeature }>> => {
-  if (!UUID_RE.test(token)) {
-    return { ok: false, error: INVALID_ADMIN_LINK };
-  }
   const validationError = validateZoneFeatureData(data);
   if (validationError) {
     return { ok: false, error: validationError };
@@ -223,10 +223,10 @@ export const createZoneFeatureAction = async (
     const [zone] = await db
       .select({ id: zonesTable.id })
       .from(zonesTable)
-      .where(and(eq(zonesTable.id, zoneId), eq(zonesTable.adminToken, token)))
+      .where(eq(zonesTable.id, zoneId))
       .limit(1);
     if (!zone) {
-      return { ok: false, error: INVALID_ADMIN_LINK };
+      return { ok: false, error: "Zone introuvable" };
     }
 
     const [feature] = await db
