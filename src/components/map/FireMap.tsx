@@ -18,7 +18,10 @@ import {
 } from "@/types/fire";
 
 const MARKER_SIZE = 36;
+const TIP_HEIGHT = 12;
+const MARKER_HEIGHT = MARKER_SIZE + TIP_HEIGHT;
 
+/** Épingle : cercle coloré + pointe triangulaire ancrée sur l'emplacement exact. */
 const createFireMarkerIcon = (
   color: string,
   borderColor: string,
@@ -29,25 +32,41 @@ const createFireMarkerIcon = (
     className: "fire-marker",
     html: `
       <div style="
-        width: ${MARKER_SIZE}px;
-        height: ${MARKER_SIZE}px;
-        border-radius: 50%;
-        background: ${color};
-        border: 3px solid ${borderColor};
-        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        font-weight: 700;
-        color: white;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        font-family: system-ui, sans-serif;
-      ">${symbol}</div>
+        width: ${MARKER_SIZE}px;
+        height: ${MARKER_HEIGHT}px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+      ">
+        <div style="
+          width: ${MARKER_SIZE}px;
+          height: ${MARKER_SIZE}px;
+          border-radius: 50%;
+          background: ${color};
+          border: 3px solid ${borderColor};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 700;
+          color: white;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+          font-family: system-ui, sans-serif;
+        ">${symbol}</div>
+        <div style="
+          width: 0;
+          height: 0;
+          margin-top: -3px;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: ${TIP_HEIGHT + 3}px solid ${color};
+        "></div>
+      </div>
     `,
-    iconSize: [MARKER_SIZE, MARKER_SIZE],
-    iconAnchor: [half, half],
-    popupAnchor: [0, -half],
+    iconSize: [MARKER_SIZE, MARKER_HEIGHT],
+    iconAnchor: [half, MARKER_HEIGHT],
+    popupAnchor: [0, -MARKER_HEIGHT],
   });
 };
 
