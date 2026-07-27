@@ -68,6 +68,8 @@ export const AnnotationsEditor = ({
   const [draft, setDraft] = useState<FeatureDraft | null>(null);
   const [rebuildToken, setRebuildToken] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Toast éphémère : les enregistrements sont immédiats, on le rend visible.
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   // Bottom-sheet de création (métadonnées avant le tracé).
   const [sheetKind, setSheetKind] = useState<FeatureKind | null>(null);
   const [sheetLabel, setSheetLabel] = useState("");
@@ -82,6 +84,12 @@ export const AnnotationsEditor = ({
     const id = setTimeout(() => setError(null), 6000);
     return () => clearTimeout(id);
   }, [error]);
+
+  useEffect(() => {
+    if (savedMessage == null) return;
+    const id = setTimeout(() => setSavedMessage(null), 2500);
+    return () => clearTimeout(id);
+  }, [savedMessage]);
 
   const forceRebuild = useCallback(() => setRebuildToken((t) => t + 1), []);
 
@@ -115,6 +123,7 @@ export const AnnotationsEditor = ({
       });
       if (result.ok) {
         setFeatures((prev) => [result.feature, ...prev]);
+        setSavedMessage("Annotation enregistrée");
       } else {
         setError(result.error);
       }
@@ -138,6 +147,7 @@ export const AnnotationsEditor = ({
         setFeatures((prev) =>
           prev.map((f) => (f.id === featureId ? result.feature : f))
         );
+        setSavedMessage("Modifications enregistrées");
       } else {
         setError(result.error);
         forceRebuild();
@@ -157,6 +167,7 @@ export const AnnotationsEditor = ({
     const result = await deleteZoneFeatureAction(id, token);
     if (result.ok) {
       setFeatures((prev) => prev.filter((f) => f.id !== id));
+      setSavedMessage("Annotation supprimée");
     } else {
       setError(result.error);
       forceRebuild();
@@ -212,6 +223,14 @@ export const AnnotationsEditor = ({
           role="alert"
         >
           {error}
+        </div>
+      ) : savedMessage ? (
+        <div
+          className="absolute inset-x-4 top-20 z-[1200] rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-medium text-white shadow-lg"
+          role="status"
+          aria-live="polite"
+        >
+          ✓ {savedMessage}
         </div>
       ) : null}
 
