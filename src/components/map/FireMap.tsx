@@ -12,7 +12,11 @@ import { useMap } from "react-leaflet";
 import { UserLocationMarker } from "@/components/map/UserLocationMarker";
 import { ZoneFeaturesLayer } from "@/components/map/ZoneFeaturesLayer";
 import { getMarkerAppearance } from "@/lib/fire-marker";
-import { MAP_BACKGROUNDS, type MapBackgroundId } from "@/lib/map-layers";
+import {
+  MAP_BACKGROUNDS,
+  getDefaultBackgroundId,
+  type MapBackgroundId,
+} from "@/lib/map-layers";
 import type { GeoPositionWithAccuracy } from "@/lib/geo";
 import type { FirePoint, ZoneFeature } from "@/lib/db/schema";
 import {
@@ -125,7 +129,7 @@ export const FireMap = ({
   features = [],
   center,
   zoom,
-  tileLayer = "topo",
+  tileLayer = getDefaultBackgroundId(),
   onLongPress,
   userLocation = null,
   flyToUserToken = 0,

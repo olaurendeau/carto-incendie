@@ -38,13 +38,17 @@ export const isScan25Available = (): boolean => !!IGN_KEY;
 export const getAvailableBackgroundIds = (): MapBackgroundId[] =>
   MAP_BACKGROUND_IDS.filter((id) => id !== "scan25" || isScan25Available());
 
+/** Fond par défaut : le SCAN 25 quand la clé IGN est là, sinon OpenTopoMap. */
+export const getDefaultBackgroundId = (): MapBackgroundId =>
+  isScan25Available() ? "scan25" : "topo";
+
 const TILE_LAYER_STORAGE_KEY = "carto-incendie-tile-layer";
 
 const isBackgroundId = (value: string): value is MapBackgroundId =>
   (MAP_BACKGROUND_IDS as readonly string[]).includes(value);
 
 export const getStoredTileLayer = (): MapBackgroundId => {
-  if (typeof window === "undefined") return "topo";
+  if (typeof window === "undefined") return getDefaultBackgroundId();
   try {
     const stored = localStorage.getItem(TILE_LAYER_STORAGE_KEY);
     if (
@@ -54,9 +58,9 @@ export const getStoredTileLayer = (): MapBackgroundId => {
     ) {
       return stored;
     }
-    return "topo";
+    return getDefaultBackgroundId();
   } catch {
-    return "topo";
+    return getDefaultBackgroundId();
   }
 };
 
