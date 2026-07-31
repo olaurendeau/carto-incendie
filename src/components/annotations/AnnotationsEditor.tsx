@@ -498,7 +498,7 @@ export const AnnotationsEditor = ({
             <textarea
               value={sheetNote}
               onChange={(e) => setSheetNote(e.target.value)}
-              rows={3}
+              rows={4}
               maxLength={2000}
               placeholder="Note (facultatif) — précisions, consignes…"
               className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
@@ -506,7 +506,7 @@ export const AnnotationsEditor = ({
             />
 
             <IdentityFields
-              compact
+              hint
               name={identityName}
               qualite={identityQualite}
               onNameChange={setIdentityName}
@@ -557,7 +557,7 @@ export const AnnotationsEditor = ({
               — cette action est irréversible.
             </p>
             <IdentityFields
-              compact
+              hint
               name={identityName}
               qualite={identityQualite}
               onNameChange={setIdentityName}
@@ -633,7 +633,7 @@ export const AnnotationsEditor = ({
             <textarea
               value={editNote}
               onChange={(e) => setEditNote(e.target.value)}
-              rows={4}
+              rows={6}
               maxLength={2000}
               placeholder="Note (facultatif) — précisions, consignes…"
               className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
@@ -641,7 +641,7 @@ export const AnnotationsEditor = ({
             />
 
             <IdentityFields
-              compact
+              hint
               name={identityName}
               qualite={identityQualite}
               onNameChange={setIdentityName}

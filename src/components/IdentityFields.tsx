@@ -7,20 +7,21 @@ type IdentityFieldsProps = {
   qualite: Qualite | null;
   onNameChange: (name: string) => void;
   onQualiteChange: (qualite: Qualite | null) => void;
-  /** Variante resserrée pour les bottom-sheets (légende courte, pas de titre). */
-  compact?: boolean;
+  /** Affiche la légende « facultatifs, mémorisés sur cet appareil »
+   *  (inutile quand la section a déjà sa propre explication). */
+  hint?: boolean;
 };
 
-/** Identité déclarative (pas de compte) : nom + qualité, mémorisés en local. */
+/** Identité déclarative (pas de compte) : nom + qualité en pilules. */
 export const IdentityFields = ({
   name,
   qualite,
   onNameChange,
   onQualiteChange,
-  compact = false,
+  hint = false,
 }: IdentityFieldsProps) => (
-  <div className="flex flex-col gap-3">
-    {compact ? (
+  <div className="flex flex-col gap-2">
+    {hint ? (
       <p className="text-xs text-zinc-500">
         Votre nom et qualité — facultatifs, mémorisés sur cet appareil.
       </p>
@@ -30,10 +31,10 @@ export const IdentityFields = ({
       value={name}
       onChange={(e) => onNameChange(e.target.value)}
       placeholder="Votre nom"
-      className="min-h-[48px] rounded-xl border border-zinc-300 bg-white px-4 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+      className="min-h-[40px] rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
       aria-label="Votre nom"
     />
-    <div className="grid grid-cols-2 gap-2">
+    <div className="flex flex-wrap gap-1.5">
       {QUALITE_KEYS.map((key) => {
         const isSelected = qualite === key;
         return (
@@ -41,7 +42,7 @@ export const IdentityFields = ({
             key={key}
             type="button"
             onClick={() => onQualiteChange(isSelected ? null : key)}
-            className={`min-h-[48px] rounded-xl border-2 px-4 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
+            className={`min-h-[36px] rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 ${
               isSelected
                 ? "border-transparent bg-zinc-900 text-white"
                 : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500"
