@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { PhotosSection } from "@/components/fire/PhotosSection";
+import { IdentityFields } from "@/components/IdentityFields";
 import {
   createFirePointAction,
   updateFirePointAction,
@@ -14,8 +15,6 @@ import {
   CRITICITE_DESCRIPTIONS,
   CRITICITE_KEYS,
   CRITICITE_LABELS,
-  QUALITE_KEYS,
-  QUALITE_LABELS,
   STATUT_DESCRIPTIONS,
   STATUT_KEYS,
   STATUT_LABELS,
@@ -269,38 +268,12 @@ export const FirePointForm = ({
               <p className="text-sm font-medium text-zinc-700">
                 Qui indique ce statut ?
               </p>
-              <input
-                type="text"
-                value={statutByName}
-                onChange={(e) => setStatutByName(e.target.value)}
-                placeholder="Votre nom"
-                className="min-h-[48px] rounded-xl border border-zinc-300 bg-white px-4 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-                aria-label="Nom de la personne qui indique ce statut"
+              <IdentityFields
+                name={statutByName}
+                qualite={statutByQualite}
+                onNameChange={setStatutByName}
+                onQualiteChange={setStatutByQualite}
               />
-              <div className="grid grid-cols-2 gap-2">
-                {QUALITE_KEYS.map((key) => {
-                  const isSelected = statutByQualite === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() =>
-                        setStatutByQualite(isSelected ? null : key)
-                      }
-                      className={`min-h-[48px] rounded-xl border-2 px-4 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
-                        isSelected
-                          ? "border-transparent bg-zinc-900 text-white"
-                          : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500"
-                      }`}
-                      aria-pressed={isSelected}
-                      aria-label={`Qualité : ${QUALITE_LABELS[key]}`}
-                      tabIndex={0}
-                    >
-                      {QUALITE_LABELS[key]}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           ) : null}
         </section>
@@ -327,40 +300,12 @@ export const FirePointForm = ({
           Pas de compte : votre nom et votre qualité sont mémorisés sur cet
           appareil.
         </p>
-        <div className="flex flex-col gap-3">
-          <input
-            type="text"
-            value={creatorName}
-            onChange={(e) => setCreatorName(e.target.value)}
-            placeholder="Votre nom"
-            className="min-h-[48px] rounded-xl border border-zinc-300 bg-white px-4 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-            aria-label="Votre nom"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            {QUALITE_KEYS.map((key) => {
-              const isSelected = creatorQualite === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() =>
-                    setCreatorQualite(isSelected ? null : key)
-                  }
-                  className={`min-h-[48px] rounded-xl border-2 px-4 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 ${
-                    isSelected
-                      ? "border-transparent bg-zinc-900 text-white"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500"
-                  }`}
-                  aria-pressed={isSelected}
-                  aria-label={`Qualité : ${QUALITE_LABELS[key]}`}
-                  tabIndex={0}
-                >
-                  {QUALITE_LABELS[key]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <IdentityFields
+          name={creatorName}
+          qualite={creatorQualite}
+          onNameChange={setCreatorName}
+          onQualiteChange={setCreatorQualite}
+        />
       </section>
 
       {error ? (
