@@ -19,6 +19,8 @@ type GeomanControllerProps = {
   onCreate: (coordinates: LatLngPoint[]) => void;
   onUpdate: (featureId: string, coordinates: LatLngPoint[]) => void;
   onRemoveRequest: (featureId: string) => void;
+  /** Tap sur une annotation en mode idle (ouvre la fiche d'édition). */
+  onSelect: (featureId: string) => void;
 };
 
 /** Geoman n'augmente pas le type de base L.Layer avec `pm`. */
@@ -62,6 +64,7 @@ export const GeomanController = ({
   onCreate,
   onUpdate,
   onRemoveRequest,
+  onSelect,
 }: GeomanControllerProps) => {
   const map = useMap();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -70,12 +73,14 @@ export const GeomanController = ({
   const onCreateRef = useRef(onCreate);
   const onUpdateRef = useRef(onUpdate);
   const onRemoveRequestRef = useRef(onRemoveRequest);
+  const onSelectRef = useRef(onSelect);
 
   useEffect(() => {
     modeRef.current = mode;
     onCreateRef.current = onCreate;
     onUpdateRef.current = onUpdate;
     onRemoveRequestRef.current = onRemoveRequest;
+    onSelectRef.current = onSelect;
   });
 
   // Initialisation geoman + groupe de couches.
@@ -136,6 +141,10 @@ export const GeomanController = ({
       // pour chaque couche modifiée (sauvegarde batch à la sortie du mode).
       layer.on("pm:update", (e) => {
         onUpdateRef.current(feature.id, toPoints(e.layer as L.Layer));
+      });
+      // En modes draw/edit/remove, le clic est déjà consommé par geoman.
+      layer.on("click", () => {
+        if (modeRef.current === "idle") onSelectRef.current(feature.id);
       });
       layerToFeatureIdRef.current.set(layer, feature.id);
       group.addLayer(layer);

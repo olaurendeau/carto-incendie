@@ -31,6 +31,7 @@ type AnnotationsMapProps = {
   onCreate: (coordinates: LatLngPoint[]) => void;
   onUpdate: (featureId: string, coordinates: LatLngPoint[]) => void;
   onRemoveRequest: (featureId: string) => void;
+  onSelect: (featureId: string) => void;
 };
 
 export const AnnotationsMap = ({
@@ -43,6 +44,7 @@ export const AnnotationsMap = ({
   onCreate,
   onUpdate,
   onRemoveRequest,
+  onSelect,
 }: AnnotationsMapProps) => {
   const [tileLayer] = useState(() => getStoredTileLayer());
 
@@ -83,6 +85,7 @@ export const AnnotationsMap = ({
         onCreate={onCreate}
         onUpdate={onUpdate}
         onRemoveRequest={onRemoveRequest}
+        onSelect={onSelect}
       />
     </MapContainer>
   );
