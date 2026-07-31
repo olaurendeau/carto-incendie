@@ -2,12 +2,14 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   firePointsTable,
+  zoneFeatureEventsTable,
   zoneFeaturesTable,
   zonesTable,
   type FirePoint,
   type PublicZone,
   type Zone,
   type ZoneFeature,
+  type ZoneFeatureEvent,
 } from "@/lib/db/schema";
 
 // Sélection explicite sans adminToken : seule forme autorisée en lecture publique.
@@ -69,6 +71,17 @@ export const getFeaturesForZone = async (
     .from(zoneFeaturesTable)
     .where(eq(zoneFeaturesTable.zoneId, zoneId))
     .orderBy(desc(zoneFeaturesTable.createdAt));
+};
+
+export const getFeatureEventsForZone = async (
+  zoneId: string
+): Promise<ZoneFeatureEvent[]> => {
+  return db
+    .select()
+    .from(zoneFeatureEventsTable)
+    .where(eq(zoneFeatureEventsTable.zoneId, zoneId))
+    .orderBy(desc(zoneFeatureEventsTable.createdAt))
+    .limit(200);
 };
 
 export const getFirePointById = async (

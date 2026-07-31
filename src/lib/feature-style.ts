@@ -74,6 +74,9 @@ export const validateZoneFeatureData = (
   if (data.label.trim().length > 120) {
     return "Le libellé est limité à 120 caractères";
   }
+  if (data.note.trim().length > 2000) {
+    return "La note est limitée à 2000 caractères";
+  }
   if (data.color != null && !COLOR_RE.test(data.color)) {
     return "Couleur invalide";
   }

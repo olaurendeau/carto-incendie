@@ -14,6 +14,7 @@ const ligne = (over: Partial<ZoneFeatureFormData> = {}): ZoneFeatureFormData => 
     { lat: 44.8, lng: 6.6 },
   ],
   label: "",
+  note: "",
   color: null,
   ...over,
 });
@@ -87,6 +88,16 @@ describe("validateZoneFeatureData", () => {
     expect(
       validateZoneFeatureData(ligne({ kind: "zone_risque_pierres" }))
     ).toBe("Géométrie incompatible avec ce type d'annotation");
+  });
+
+  it("limite la note à 2000 caractères (après trim)", () => {
+    expect(validateZoneFeatureData(ligne({ note: "a".repeat(2000) }))).toBeNull();
+    expect(validateZoneFeatureData(ligne({ note: "a".repeat(2001) }))).toBe(
+      "La note est limitée à 2000 caractères"
+    );
+    expect(
+      validateZoneFeatureData(ligne({ note: "a".repeat(2000) + "   " }))
+    ).toBeNull();
   });
 
   it("refuse une couleur invalide et des coordonnées non finies", () => {

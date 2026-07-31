@@ -5,5 +5,6 @@ export type FeatureDraft = {
   kind: FeatureKind;
   geometryType: FeatureGeometry;
   label: string;
+  note: string;
   color: string | null;
 };

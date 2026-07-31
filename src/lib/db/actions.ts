@@ -1,8 +1,11 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type {
+  FeatureAuthor,
+  FeatureEventAction,
+  FeatureKind,
   FirePointFormData,
   ZoneFeatureFormData,
   ZoneFormData,
@@ -10,6 +13,7 @@ import type {
 import { db } from "@/lib/db";
 import {
   firePointsTable,
+  zoneFeatureEventsTable,
   zoneFeaturesTable,
   zonesTable,
   type ZoneFeature,
@@ -197,22 +201,40 @@ export const updateFirePointAction = async (
   }
 };
 
-const INVALID_ADMIN_LINK = "Lien d'administration invalide";
-
-/** Sous-requête : zones dont le token admin correspond. */
-const zonesWithToken = (token: string) =>
-  db
-    .select({ id: zonesTable.id })
-    .from(zonesTable)
-    .where(eq(zonesTable.adminToken, token));
-
 /**
- * Création ouverte à tous (pas de token) — comme les points d'incendie.
- * La modification et la suppression restent réservées au lien admin.
+ * Journalise un changement d'annotation, en best-effort : neon-http ne
+ * supporte pas les transactions, et un trou d'historique ne doit jamais
+ * faire échouer l'action principale (déjà réussie).
  */
+const logFeatureEvent = async (event: {
+  zoneId: string;
+  featureId: string;
+  action: FeatureEventAction;
+  featureKind: FeatureKind;
+  featureLabel: string | null;
+  author: FeatureAuthor;
+}): Promise<void> => {
+  try {
+    await db.insert(zoneFeatureEventsTable).values({
+      zoneId: event.zoneId,
+      featureId: event.featureId,
+      action: event.action,
+      featureKind: event.featureKind,
+      featureLabel: event.featureLabel,
+      authorName: event.author.name.trim() || null,
+      authorQualite: event.author.qualite,
+    });
+  } catch (err) {
+    console.error("logFeatureEvent error:", err);
+  }
+};
+
+/** Création, modification et suppression ouvertes à tous — comme les points
+ *  d'incendie. L'auteur est déclaratif et alimente l'historique. */
 export const createZoneFeatureAction = async (
   zoneId: string,
-  data: ZoneFeatureFormData
+  data: ZoneFeatureFormData,
+  author: FeatureAuthor
 ): Promise<ActionResult<{ feature: ZoneFeature }>> => {
   const validationError = validateZoneFeatureData(data);
   if (validationError) {
@@ -237,13 +259,25 @@ export const createZoneFeatureAction = async (
         geometryType: data.geometryType,
         coordinates: data.coordinates,
         label: data.label.trim() || null,
+        note: data.note.trim() || null,
         color: data.kind === "autre" ? data.color : null,
+        creatorName: author.name.trim() || null,
+        creatorQualite: author.qualite,
       })
       .returning();
 
     if (!feature) {
       return { ok: false, error: "Échec de l'enregistrement" };
     }
+
+    await logFeatureEvent({
+      zoneId,
+      featureId: feature.id,
+      action: "creation",
+      featureKind: feature.kind,
+      featureLabel: feature.label,
+      author,
+    });
 
     revalidatePath(`/zone/${zoneId}`);
     return { ok: true, feature };
@@ -258,38 +292,41 @@ export const createZoneFeatureAction = async (
 
 export const updateZoneFeatureAction = async (
   id: string,
-  token: string,
-  data: ZoneFeatureFormData
+  data: ZoneFeatureFormData,
+  author: FeatureAuthor
 ): Promise<ActionResult<{ feature: ZoneFeature }>> => {
-  if (!UUID_RE.test(token)) {
-    return { ok: false, error: INVALID_ADMIN_LINK };
-  }
   const validationError = validateZoneFeatureData(data);
   if (validationError) {
     return { ok: false, error: validationError };
   }
 
   try {
-    // kind et geometryType sont immuables après création.
+    // kind et geometryType sont immuables après création ;
+    // le créateur (creator_*) reste celui de la création.
     const [feature] = await db
       .update(zoneFeaturesTable)
       .set({
         coordinates: data.coordinates,
         label: data.label.trim() || null,
+        note: data.note.trim() || null,
         color: data.kind === "autre" ? data.color : null,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(zoneFeaturesTable.id, id),
-          inArray(zoneFeaturesTable.zoneId, zonesWithToken(token))
-        )
-      )
+      .where(eq(zoneFeaturesTable.id, id))
       .returning();
 
     if (!feature) {
-      return { ok: false, error: INVALID_ADMIN_LINK };
+      return { ok: false, error: "Annotation introuvable" };
     }
+
+    await logFeatureEvent({
+      zoneId: feature.zoneId,
+      featureId: feature.id,
+      action: "modification",
+      featureKind: feature.kind,
+      featureLabel: feature.label,
+      author,
+    });
 
     revalidatePath(`/zone/${feature.zoneId}`);
     return { ok: true, feature };
@@ -304,26 +341,30 @@ export const updateZoneFeatureAction = async (
 
 export const deleteZoneFeatureAction = async (
   id: string,
-  token: string
+  author: FeatureAuthor
 ): Promise<{ ok: true } | { ok: false; error: string }> => {
-  if (!UUID_RE.test(token)) {
-    return { ok: false, error: INVALID_ADMIN_LINK };
-  }
-
   try {
     const [row] = await db
       .delete(zoneFeaturesTable)
-      .where(
-        and(
-          eq(zoneFeaturesTable.id, id),
-          inArray(zoneFeaturesTable.zoneId, zonesWithToken(token))
-        )
-      )
-      .returning({ zoneId: zoneFeaturesTable.zoneId });
+      .where(eq(zoneFeaturesTable.id, id))
+      .returning({
+        zoneId: zoneFeaturesTable.zoneId,
+        kind: zoneFeaturesTable.kind,
+        label: zoneFeaturesTable.label,
+      });
 
     if (!row) {
-      return { ok: false, error: INVALID_ADMIN_LINK };
+      return { ok: false, error: "Annotation introuvable" };
     }
+
+    await logFeatureEvent({
+      zoneId: row.zoneId,
+      featureId: id,
+      action: "suppression",
+      featureKind: row.kind,
+      featureLabel: row.label,
+      author,
+    });
 
     revalidatePath(`/zone/${row.zoneId}`);
     return { ok: true };

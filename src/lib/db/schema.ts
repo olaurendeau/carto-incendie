@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type {
   Criticite,
+  FeatureEventAction,
   FeatureGeometry,
   FeatureKind,
   FirePhotoJson,
@@ -58,7 +59,7 @@ export const firePointsTable = pgTable("fire_points", {
     .defaultNow(),
 });
 
-/** Annotations dessinées par l'admin (mains courantes, zones à risque…). */
+/** Annotations sur la carte de la zone (mains courantes, zones à risque…). */
 export const zoneFeaturesTable = pgTable("zone_features", {
   id: uuid("id").primaryKey().defaultRandom(),
   zoneId: uuid("zone_id")
@@ -68,9 +69,12 @@ export const zoneFeaturesTable = pgTable("zone_features", {
   geometryType: text("geometry_type").$type<FeatureGeometry>().notNull(),
   coordinates: jsonb("coordinates").$type<LatLngPoint[]>().notNull(),
   label: text("label"),
+  note: text("note"),
   // Couleur personnalisée (type « autre ») ; les types prédéfinis ont une
   // couleur fixe dans FEATURE_KIND_COLORS.
   color: text("color"),
+  creatorName: text("creator_name"),
+  creatorQualite: text("creator_qualite").$type<Qualite>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -79,9 +83,30 @@ export const zoneFeaturesTable = pgTable("zone_features", {
     .defaultNow(),
 });
 
+/** Journal des changements d'annotations (création/modification/suppression). */
+export const zoneFeatureEventsTable = pgTable("zone_feature_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  zoneId: uuid("zone_id")
+    .notNull()
+    .references(() => zonesTable.id, { onDelete: "cascade" }),
+  // Volontairement sans FK vers zone_features : l'id survit à la suppression
+  // de l'annotation et relie les événements d'une même annotation.
+  featureId: uuid("feature_id"),
+  action: text("action").$type<FeatureEventAction>().notNull(),
+  // Snapshots dénormalisés : l'historique reste lisible après suppression.
+  featureKind: text("feature_kind").$type<FeatureKind>().notNull(),
+  featureLabel: text("feature_label"),
+  authorName: text("author_name"),
+  authorQualite: text("author_qualite").$type<Qualite>(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Zone = typeof zonesTable.$inferSelect;
 export type FirePoint = typeof firePointsTable.$inferSelect;
 export type ZoneFeature = typeof zoneFeaturesTable.$inferSelect;
+export type ZoneFeatureEvent = typeof zoneFeatureEventsTable.$inferSelect;
 
 /** Zone sans le token admin — seule forme autorisée sur les chemins publics. */
 export type PublicZone = Omit<Zone, "adminToken">;

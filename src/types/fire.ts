@@ -138,6 +138,27 @@ export type ZoneFeatureFormData = {
   geometryType: FeatureGeometry;
   coordinates: LatLngPoint[];
   label: string;
+  note: string;
   /** Couleur personnalisée, utilisée uniquement pour le type « autre ». */
   color: string | null;
+};
+
+/** Identité déclarative de l'auteur d'une action sur une annotation. */
+export type FeatureAuthor = {
+  name: string;
+  qualite: Qualite | null;
+};
+
+/** Actions journalisées dans l'historique des annotations. */
+export const FEATURE_EVENT_ACTION_KEYS = [
+  "creation",
+  "modification",
+  "suppression",
+] as const;
+export type FeatureEventAction = (typeof FEATURE_EVENT_ACTION_KEYS)[number];
+
+export const FEATURE_EVENT_ACTION_LABELS: Record<FeatureEventAction, string> = {
+  creation: "Création",
+  modification: "Modification",
+  suppression: "Suppression",
 };
