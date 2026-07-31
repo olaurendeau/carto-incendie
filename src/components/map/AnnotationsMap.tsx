@@ -13,7 +13,11 @@ import {
   type EditorMode,
 } from "@/components/map/GeomanController";
 import type { FeatureDraft } from "@/components/annotations/editor-types";
-import { MAP_BACKGROUNDS, getStoredTileLayer } from "@/lib/map-layers";
+import {
+  MAP_BACKGROUNDS,
+  TILE_LAYER_REQUEST_OPTIONS,
+  getStoredTileLayer,
+} from "@/lib/map-layers";
 import type { FirePoint, PublicZone, ZoneFeature } from "@/lib/db/schema";
 import { CRITICITE_COLORS, type LatLngPoint } from "@/types/fire";
 
@@ -54,6 +58,7 @@ export const AnnotationsMap = ({
         key={tileLayer}
         url={MAP_BACKGROUNDS[tileLayer].url}
         maxNativeZoom={MAP_BACKGROUNDS[tileLayer].maxNativeZoom}
+        {...TILE_LAYER_REQUEST_OPTIONS}
       />
       {/* Points d'incendie en contexte, non interactifs. */}
       {firePoints.map((point) => (

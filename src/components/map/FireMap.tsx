@@ -14,6 +14,7 @@ import { ZoneFeaturesLayer } from "@/components/map/ZoneFeaturesLayer";
 import { getMarkerAppearance } from "@/lib/fire-marker";
 import {
   MAP_BACKGROUNDS,
+  TILE_LAYER_REQUEST_OPTIONS,
   getDefaultBackgroundId,
   type MapBackgroundId,
 } from "@/lib/map-layers";
@@ -146,6 +147,7 @@ export const FireMap = ({
         key={tileLayer}
         url={MAP_BACKGROUNDS[tileLayer].url}
         maxNativeZoom={MAP_BACKGROUNDS[tileLayer].maxNativeZoom}
+        {...TILE_LAYER_REQUEST_OPTIONS}
       />
       <ZoneFeaturesLayer features={features} />
       {userLocation != null ? (

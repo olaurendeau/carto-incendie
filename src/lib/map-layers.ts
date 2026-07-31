@@ -42,6 +42,18 @@ export const getAvailableBackgroundIds = (): MapBackgroundId[] =>
 export const getDefaultBackgroundId = (): MapBackgroundId =>
   isScan25Available() ? "scan25" : "topo";
 
+/**
+ * Options économes en requêtes tuiles (quota IGN) :
+ * - updateWhenIdle : attendre la fin du déplacement plutôt que charger en continu ;
+ * - updateWhenZooming false : pas de chargement aux paliers intermédiaires d'un zoom animé ;
+ * - keepBuffer : garder plus de tuiles autour de l'écran (retours en arrière sans requête).
+ */
+export const TILE_LAYER_REQUEST_OPTIONS = {
+  updateWhenIdle: true,
+  updateWhenZooming: false,
+  keepBuffer: 4,
+} as const;
+
 const TILE_LAYER_STORAGE_KEY = "carto-incendie-tile-layer";
 
 const isBackgroundId = (value: string): value is MapBackgroundId =>

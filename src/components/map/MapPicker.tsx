@@ -11,6 +11,7 @@ import {
 } from "@/lib/geo";
 import {
   MAP_BACKGROUNDS,
+  TILE_LAYER_REQUEST_OPTIONS,
   getStoredTileLayer,
   type MapBackgroundId,
 } from "@/lib/map-layers";
@@ -158,6 +159,7 @@ export const MapPicker = ({
         key={tileLayer}
         url={MAP_BACKGROUNDS[tileLayer].url}
         maxNativeZoom={MAP_BACKGROUNDS[tileLayer].maxNativeZoom}
+        {...TILE_LAYER_REQUEST_OPTIONS}
       />
         <MapEvents onSelect={onSelect} onZoomChange={onZoomChange} />
         <MapCenterToPosition
