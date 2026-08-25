@@ -34,8 +34,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: main
-    ports:
-      - "5432:5432"
+    # Pas de publication de port : seuls neon-proxy (réseau compose) et les
+    # migrations (`make db-push`, conteneur) y accèdent via postgres:5432.
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
