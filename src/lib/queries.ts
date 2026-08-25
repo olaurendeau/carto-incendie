@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   firePointsTable,
@@ -11,6 +11,10 @@ import {
   type ZoneFeature,
   type ZoneFeatureEvent,
 } from "@/lib/db/schema";
+import {
+  summarizeZonePoints,
+  type ZonePointSummary,
+} from "@/lib/zone-summary";
 
 // Sélection explicite sans adminToken : seule forme autorisée en lecture publique.
 const publicZoneColumns = {
@@ -28,6 +32,21 @@ export const getZones = async (): Promise<PublicZone[]> => {
     .select(publicZoneColumns)
     .from(zonesTable)
     .orderBy(desc(zonesTable.createdAt));
+};
+
+/** Compte des points par zone et par statut, pour les badges de la liste. */
+export const getZoneSummaries = async (): Promise<
+  Record<string, ZonePointSummary>
+> => {
+  const rows = await db
+    .select({
+      zoneId: firePointsTable.zoneId,
+      statut: firePointsTable.statut,
+      count: count(),
+    })
+    .from(firePointsTable)
+    .groupBy(firePointsTable.zoneId, firePointsTable.statut);
+  return summarizeZonePoints(rows);
 };
 
 export const getZonePublic = async (

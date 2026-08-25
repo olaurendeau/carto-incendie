@@ -44,7 +44,7 @@ npx drizzle-kit migrate    # Applique les migrations (lit .env.local)
 
 | Route | Rôle |
 |---|---|
-| `/` | Liste publique des zones + création |
+| `/` | Liste publique des zones (recherche par nom + badges par statut) + création + secours « Mes zones admin » |
 | `/zone/new` | Formulaire de création de zone (affiche le lien admin une seule fois) |
 | `/zone/[id]` | Carte de la zone, centrée sur son centre/zoom |
 | `/zone/[id]/edit?token=xxx` | Édition de la zone (token validé côté serveur) |
@@ -94,10 +94,14 @@ public est déclaratif (`ZoneFeaturesLayer` : Polyline/Polygon +
 - **UI en français uniquement**, mobile-first : cibles tactiles
   `min-h-[48px]`, carte plein écran `h-dvh`, contrôles flottants `z-[500+]`.
 - **Pas de login** : l'identité (nom + qualité) vit en localStorage et est
-  jointe à chaque point créé. Voir `src/lib/storage.ts`.
+  jointe à chaque point créé. Voir `src/lib/storage.ts`. Les liens admin
+  (`carto-incendie-my-zones`) sont eux aussi écrits/lus côté client
+  (`MyAdminZones` sur la home).
 - **Sécurité du token admin** : `adminToken` ne doit **jamais** apparaître
   dans une lecture publique — toujours sélectionner les colonnes
-  explicitement (voir `publicZoneColumns` dans `src/lib/queries.ts`).
+  explicitement (voir `publicZoneColumns` dans `src/lib/queries.ts`). Les
+  compteurs de points de la home passent par `getZoneSummaries()` +
+  `summarizeZonePoints` (`src/lib/zone-summary.ts`, logique pure testée).
   `updateZoneAction` revalide le token dans son `WHERE`, jamais confiance au
   rendu de la page.
 - Composants en arrow functions + exports nommés ; pages App Router en

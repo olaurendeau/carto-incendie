@@ -1,10 +1,31 @@
 import Link from "next/link";
-import { getZones } from "@/lib/queries";
+import { getZones, getZoneSummaries } from "@/lib/queries";
+import { MyAdminZones } from "@/components/zone/MyAdminZones";
+import { ZoneList } from "@/components/zone/ZoneList";
 
 export const dynamic = "force-dynamic";
 
+const HOW_IT_WORKS_STEPS = [
+  {
+    title: "Créez une zone",
+    description:
+      "Définissez un nom, un centre et un zoom : vous recevez un lien d'administration secret à conserver.",
+  },
+  {
+    title: "Partagez le lien public",
+    description:
+      "Toute personne ayant le lien peut ouvrir la carte et signaler des points d'incendie, sans compte.",
+  },
+  {
+    title: "Signalez et confirmez",
+    description:
+      "Les statuts se suivent ensemble (en cours, traité, disparu) et chacun peut confirmer un point avec un « + ».",
+  },
+] as const;
+
 export default async function HomePage() {
   const zones = await getZones();
+  const summaries = await getZoneSummaries();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-6 bg-zinc-50 p-4">
@@ -16,6 +37,34 @@ export default async function HomePage() {
         </p>
       </header>
 
+      <section
+        className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+        aria-labelledby="how-it-works-heading"
+      >
+        <h2
+          id="how-it-works-heading"
+          className="text-sm font-semibold uppercase tracking-wide text-zinc-500"
+        >
+          Comment ça marche ?
+        </h2>
+        <ol className="mt-3 flex flex-col gap-3">
+          {HOW_IT_WORKS_STEPS.map((step, index) => (
+            <li key={step.title} className="flex items-start gap-3">
+              <span
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white"
+                aria-hidden
+              >
+                {index + 1}
+              </span>
+              <div>
+                <p className="font-medium text-zinc-900">{step.title}</p>
+                <p className="text-sm text-zinc-600">{step.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <Link
         href="/zone/new"
         className="flex min-h-[56px] items-center justify-center rounded-xl bg-red-600 px-4 text-lg font-semibold text-white transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 active:bg-red-700"
@@ -25,34 +74,9 @@ export default async function HomePage() {
         + Créer une zone d&apos;incendie
       </Link>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">
-          Zones d&apos;incendie
-        </h2>
-        {zones.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 bg-white p-6 text-center text-zinc-500">
-            Aucune zone pour l&apos;instant. Créez la première !
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {zones.map((zone) => (
-              <li key={zone.id}>
-                <Link
-                  href={`/zone/${zone.id}`}
-                  className="flex min-h-[56px] items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm transition-colors hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
-                  tabIndex={0}
-                  aria-label={`Ouvrir la zone ${zone.name}`}
-                >
-                  <span className="font-medium text-zinc-900">{zone.name}</span>
-                  <span className="text-sm text-zinc-400">
-                    {new Date(zone.createdAt).toLocaleDateString("fr-FR")}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <MyAdminZones zones={zones} />
+
+      <ZoneList zones={zones} summaries={summaries} />
 
       <footer className="mt-auto flex justify-center pt-8 pb-2">
         <a
