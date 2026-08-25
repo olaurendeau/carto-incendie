@@ -24,6 +24,37 @@ services:
     # Le rm purge un éventuel verrou orphelin (conteneur tué sans arrêt propre).
     command: sh -c "rm -rf .next/dev/lock && npm run dev -- -H 0.0.0.0"
 
+  # PostgreSQL local + proxy Neon HTTP — dev sans compte Neon (`make db-up`).
+  # L'app garde le driver @neondatabase/serverless : en dev, DATABASE_URL
+  # pointe vers le proxy (port 4444) ; en prod, vers Neon (inchangé).
+  postgres:
+    image: postgres:17-alpine
+    profiles: [db]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: main
+    # Pas de publication de port : seuls neon-proxy (réseau compose) et les
+    # migrations (`make db-push`, conteneur) y accèdent via postgres:5432.
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    profiles: [db]
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/main
+    ports:
+      - "4444:4444"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # Drizzle Studio — `make db-studio`, puis ouvrir https://local.drizzle.studio
   studio:
     <<: *node
@@ -52,3 +83,4 @@ services:
 volumes:
   next-cache:
   pw-cache:
+  pg-data:

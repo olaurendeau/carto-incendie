@@ -12,12 +12,13 @@ GID := $(shell id -g)
 # UID/GID de l'hôte, transmis à compose pour que les fichiers créés dans le
 # bind mount (node_modules…) ne soient pas root-owned sous Linux.
 # Nommés HOST_* car UID/GID sont readonly dans certains shells (macOS).
+PROJECT := $(notdir $(abspath .))
 COMPOSE = HOST_UID=$(UID) HOST_GID=$(GID) \
 	NODE_IMAGE=$(NODE_IMAGE) PLAYWRIGHT_IMAGE=$(PLAYWRIGHT_IMAGE) \
 	docker compose
 RUN = $(COMPOSE) run --rm app
 
-.PHONY: help env install prepare dev down build start lint test test-e2e db-push db-studio sh clean
+.PHONY: help env install prepare dev down build start lint test test-e2e db-push db-up db-down db-studio sh clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -59,13 +60,24 @@ test-e2e: .env.local ## Tests e2e (playwright, lance son propre serveur sur :303
 db-push: .env.local ## Applique le schéma Drizzle sur la base (drizzle-kit push)
 	$(RUN) npx drizzle-kit push
 
+# Les services sont nommés explicitement : `up` sans liste démarrerait
+# aussi app, et `down` (scope projet) supprimerait un serveur de dev en cours.
+db-up: ## Démarre PostgreSQL local + proxy Neon HTTP (dev sans compte Neon)
+	$(COMPOSE) --profile db up -d postgres neon-proxy
+
+db-down: ## Arrête et supprime PostgreSQL local et le proxy Neon HTTP
+	$(COMPOSE) --profile db rm -sf postgres neon-proxy
+
 db-studio: .env.local ## Drizzle Studio (ouvrir https://local.drizzle.studio)
 	$(COMPOSE) run --rm --service-ports studio
 
 sh: .env.local ## Shell dans le conteneur node
 	$(RUN) bash
 
-clean: ## Supprime node_modules, les volumes (.next, cache Playwright) et les rapports de tests
+clean: ## Supprime node_modules, les caches (.next, Playwright) et les rapports de tests
 	$(COMPOSE) run --rm --user 0:0 app sh -c "rm -rf node_modules playwright-report test-results"
-	$(COMPOSE) down -v
+	$(COMPOSE) down
+	@# Volumes nommés un par un : une suppression globale des volumes
+	@# (`compose down -v`) emporterait pg-data, la base locale.
+	docker volume rm -f $(PROJECT)_next-cache $(PROJECT)_pw-cache 2>/dev/null || true
 	rm -rf .next
