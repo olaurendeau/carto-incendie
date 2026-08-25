@@ -8,6 +8,10 @@ export default defineConfig({
   schema: "./src/lib/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    // drizzle-kit détecte le driver par package installé, `pg` en premier
+    // (devDependency) : les migrations passent en pg natif contre Neon ou le
+    // PostgreSQL local. En dev local, DATABASE_URL passe par le proxy Neon
+    // HTTP (port 4444) → on bascule sur le port 5432.
+    url: process.env.DATABASE_URL!.replace(":4444/", ":5432/"),
   },
 });

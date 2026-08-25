@@ -17,7 +17,7 @@ COMPOSE = HOST_UID=$(UID) HOST_GID=$(GID) \
 	docker compose
 RUN = $(COMPOSE) run --rm app
 
-.PHONY: help env install prepare dev down build start lint test test-e2e db-push db-studio sh clean
+.PHONY: help env install prepare dev down build start lint test test-e2e db-push db-up db-down db-studio sh clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -58,6 +58,12 @@ test-e2e: .env.local ## Tests e2e (playwright, lance son propre serveur sur :303
 
 db-push: .env.local ## Applique le schéma Drizzle sur la base (drizzle-kit push)
 	$(RUN) npx drizzle-kit push
+
+db-up: ## Démarre PostgreSQL local + proxy Neon HTTP (dev sans compte Neon)
+	$(COMPOSE) --profile db up -d
+
+db-down: ## Arrête PostgreSQL local et le proxy Neon HTTP
+	$(COMPOSE) --profile db down
 
 db-studio: .env.local ## Drizzle Studio (ouvrir https://local.drizzle.studio)
 	$(COMPOSE) run --rm --service-ports studio
