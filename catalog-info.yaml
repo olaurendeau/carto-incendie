@@ -2,9 +2,64 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: carto-incendie
+  title: Carto Incendie
+  description: |
+    Outil cartographique simple de gestion d'incendie. Un administrateur crée
+    une « Zone d'incendie » (nom + centre GPS + niveau de zoom) et reçoit une
+    seule fois un lien secret d'administration pour la modifier. Les
+    utilisateurs peuvent signaler des « Points d'incendie » (criticité, note,
+    photos, statut), tous éditables par n'importe qui et confirmables.
+  tags:
+    - cartographie
+    - gis
+    - incendie
+    - nextjs
+    - react
+    - typescript
+    - leaflet
+    - postgresql
   annotations:
     github.com/project-slug: olaurendeau/carto-incendie
+    backstage.io/techdocs-ref: dir:.
+    vercel.com/project-slug: carto-incendie
 spec:
-  type: other
-  lifecycle: unknown
+  type: website
+  lifecycle: production
   owner: guests
+  providesApis:
+    - carto-incendie-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: carto-incendie-api
+  title: Carto Incendie API
+  description: API REST de Carto Incendie (points et événements des zones).
+spec:
+  type: openapi
+  lifecycle: production
+  owner: guests
+  definition: |-
+    openapi: 3.0.0
+    info:
+      title: Carto Incendie API
+      version: 1.0.0
+    paths:
+      /api/zones/{id}/points:
+        get:
+          summary: Liste les points d'incendie d'une zone
+          parameters:
+            - name: id
+              in: path
+              required: true
+              schema:
+                type: string
+      /api/zones/{id}/feature-events:
+        get:
+          summary: Historique des événements de features d'une zone
+          parameters:
+            - name: id
+              in: path
+              required: true
+              schema:
+                type: string
